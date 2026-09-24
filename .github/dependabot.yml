@@ -1,0 +1,17 @@
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    labels: ["type:task", "area:platform"]
+    groups:
+      spring: { patterns: ["org.springframework*"] }
+      test: { patterns: ["org.junit*", "org.assertj*", "org.mockito*", "org.testcontainers*", "net.jqwik*", "com.tngtech.archunit*"] }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    labels: ["type:task", "area:platform"]
+  - package-ecosystem: docker
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    labels: ["type:task", "area:platform"]

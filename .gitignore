@@ -1,0 +1,41 @@
+# macOS
+.DS_Store
+
+# Java / Maven
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+*.log
+hs_err_pid*
+
+# IDE
+.idea/
+*.iml
+.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+.settings/
+.project
+.classpath
+.factorypath
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.jks
+
+# Node (perf scripts, tooling)
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Local data
+data/
+*.db

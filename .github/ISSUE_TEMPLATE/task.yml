@@ -1,0 +1,25 @@
+name: Task
+description: Technical or process work with no direct user-facing behaviour (CI, tooling, docs, refactor).
+title: "TD-: "
+labels: ["type:task"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What and why
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Still Given / When / Then, still testable.
+    validations:
+      required: true
+  - type: dropdown
+    id: points
+    attributes:
+      label: Points
+      options: ["1", "2", "3", "5"]
+    validations:
+      required: true

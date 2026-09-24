@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Process and conventions
+    url: https://github.com/gavinfecko/triagedesk-api/blob/main/docs/PROCESS.md
+    about: How stories, points, the board, PRs and releases work here.

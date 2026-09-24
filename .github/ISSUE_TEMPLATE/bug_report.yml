@@ -1,0 +1,45 @@
+name: Bug
+description: Something behaves differently from an accepted story or the docs.
+title: "Bug: "
+labels: ["type:bug"]
+body:
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+      description: Quote the acceptance criterion or doc line that is violated.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+      description: Include the Problem Details body and the `correlation_id`.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1. `make up && make seed`
+        2. curl …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      placeholder: v0.3.0 or a sha
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options: ["S1 blocks the sprint goal", "S2 wrong behaviour, workaround exists", "S3 cosmetic / docs"]
+    validations:
+      required: true
+  - type: input
+    id: escaped
+    attributes:
+      label: Escaped from story
+      description: The TD key of the story whose acceptance missed this, if any (counts toward the escaped-bugs metric).

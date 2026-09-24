@@ -1,0 +1,61 @@
+name: User story
+description: A slice of user-visible value, written from a persona's point of view.
+title: "TD-: "
+labels: ["type:story"]
+body:
+  - type: markdown
+    attributes:
+      value: "Key goes in the title (`TD-23 Ticket status state machine`). Fill every section; the Definition of Ready in docs/PROCESS.md §7 is checked at refinement."
+  - type: input
+    id: persona
+    attributes:
+      label: As a
+      placeholder: requester / agent / admin
+    validations:
+      required: true
+  - type: input
+    id: want
+    attributes:
+      label: I want
+    validations:
+      required: true
+  - type: input
+    id: so_that
+    attributes:
+      label: So that
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Given / When / Then. At least three, including one failure case.
+      value: |
+        - Given … when … then …
+        - Given … when … then …
+        - Given (failure case) … when … then …
+    validations:
+      required: true
+  - type: textarea
+    id: technical
+    attributes:
+      label: Technical notes
+      description: Endpoints (method, path, roles), schema changes, events, anything the reviewer should know.
+  - type: dropdown
+    id: points
+    attributes:
+      label: Points
+      options: ["1", "2", "3", "5", "8 (split it)"]
+    validations:
+      required: true
+  - type: checkboxes
+    id: dod
+    attributes:
+      label: Definition of Done (checked by the developer before "In Review")
+      options:
+        - label: Every acceptance criterion has an automated test that fails without the change
+        - label: Coverage gate green; migration applies from empty and from previous version
+        - label: docs/openapi.yaml regenerated; Problem Details for every new error path; role rules tested both ways
+        - label: ARCHITECTURE.md / ADR / README updated where relevant
+        - label: PR from template, linked with `Closes #`, all checks green, squash-merged with a conventional title
+        - label: Demoable from `make up && make seed`; accepted by the Product Owner in a comment

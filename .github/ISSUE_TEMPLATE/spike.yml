@@ -1,0 +1,23 @@
+name: Spike
+description: Time-boxed research. Produces a written answer, never shipped code.
+title: "TD-: Spike (Xh): "
+labels: ["type:spike"]
+body:
+  - type: input
+    id: timebox
+    attributes:
+      label: Time-box
+      placeholder: 3 h
+    validations:
+      required: true
+  - type: textarea
+    id: questions
+    attributes:
+      label: Questions to answer
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome (filled in when closing)
+      description: Findings, the decision they led to, and the ADR or story they feed.

@@ -1,0 +1,82 @@
+# Synced by scripts/bootstrap-github.sh. name / color / description.
+- name: type:story
+  color: 0e8a16
+  description: User-visible value, written from a persona
+- name: type:bug
+  color: d73a4a
+  description: Behaviour differs from an accepted story or the docs
+- name: type:task
+  color: 1d76db
+  description: Technical or process work
+- name: type:spike
+  color: 5319e7
+  description: Time-boxed research with a written outcome
+- name: epic:E0-foundation
+  color: c5def5
+  description: Skeleton, quality gates, board, error model, docs
+- name: epic:E1-identity
+  color: c5def5
+  description: Register, login, tokens, roles, user admin
+- name: epic:E2-ticket-lifecycle
+  color: c5def5
+  description: Create, read, search, state machine, assignment
+- name: epic:E3-collaboration
+  color: c5def5
+  description: Replies, notes, audit, tags, search
+- name: epic:E4-sla
+  color: c5def5
+  description: Policies, calendar, timers, breaches, escalation
+- name: epic:E5-notifications
+  color: c5def5
+  description: Email and in-app feed
+- name: epic:E6-reporting
+  color: c5def5
+  description: Dashboard KPIs, workload, CSV export
+- name: epic:E7-delivery
+  color: c5def5
+  description: Hardening, Docker, live deploy, performance, v1.0.0
+- name: epic:E8-web
+  color: c5def5
+  description: Angular client
+- name: priority:P0
+  color: b60205
+  description: Drop everything
+- name: priority:P1
+  color: e99695
+  description: This sprint
+- name: priority:P2
+  color: f9d0c4
+  description: Soon
+- name: priority:P3
+  color: fef2c0
+  description: Someday
+- name: area:identity
+  color: bfd4f2
+  description: Users, auth, roles
+- name: area:ticket
+  color: bfd4f2
+  description: Ticket aggregate, comments, audit, tags
+- name: area:sla
+  color: bfd4f2
+  description: SLA engine
+- name: area:notification
+  color: bfd4f2
+  description: Email and in-app
+- name: area:reporting
+  color: bfd4f2
+  description: KPIs and export
+- name: area:platform
+  color: bfd4f2
+  description: Build, CI, Docker, deploy, docs
+- name: area:web
+  color: bfd4f2
+  description: Angular client
+- name: breaking-change
+  color: 000000
+  description: Lets openapi-diff pass on an intentional API break; justify in the PR
+- name: blocked
+  color: ededed
+  description: Waiting on something outside the story; reason in the last comment
+- name: good first issue
+  color: 7057ff
+  description: Approachable for a new contributor
