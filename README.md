@@ -4,7 +4,9 @@
 
 Staff open tickets, agents work them from queues, SLA timers count down in **business hours** and pause while waiting on the requester, breaches escalate, every change is audited, and an admin dashboard shows the numbers. JWT auth with three roles, OpenAPI docs, a full test pyramid on a real PostgreSQL (Testcontainers), Docker image on every release, live demo. An Angular client ([`triagedesk-web`](https://github.com/gavinfecko/triagedesk-web)) consumes the API.
 
-_Working name. Planning started 2026-09-24; Sprint 0 begins 2026-09-25._
+![CI](https://github.com/gavinfecko/triagedesk-api/actions/workflows/ci.yml/badge.svg) ![Java](https://img.shields.io/badge/Java-21-blue) ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-6DB33F) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
+
+_Working name. Planning started 2026-09-24; Sprint 0 began the same day._
 
 ## Docs
 | Read this for | File |
