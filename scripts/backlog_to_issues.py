@@ -108,9 +108,10 @@ def gh(*args: str, capture: bool = True) -> str:
     return res.stdout if capture else ""
 
 
-def existing_titles(repo: str) -> set[str]:
-    out = gh("issue", "list", "--repo", repo, "--state", "all", "--limit", "1000", "--json", "title")
-    return {it["title"] for it in json.loads(out)}
+def existing_issues(repo: str) -> dict[str, str]:
+    """title -> url for every open or closed issue."""
+    out = gh("issue", "list", "--repo", repo, "--state", "all", "--limit", "1000", "--json", "title,url")
+    return {it["title"]: it["url"] for it in json.loads(out)}
 
 
 def issue_body(s: Story, source: str) -> str:
@@ -138,7 +139,7 @@ def main() -> None:
     total_points = sum(int(s.points) for s in stories if s.points.isdigit())
     print(f"{len(stories)} stories, {total_points} points, from {args.backlog}")
 
-    seen = existing_titles(args.repo) if args.apply else set()
+    seen = existing_issues(args.repo) if args.apply else {}
     created = skipped = 0
     for s in stories:
         ms = s.milestone or "(no milestone)"
@@ -146,6 +147,8 @@ def main() -> None:
         if s.issue_title in seen:
             print("  skip  " + line)
             skipped += 1
+            if args.project:  # item-add is idempotent, so re-runs sync the board
+                gh("project", "item-add", str(args.project), "--owner", args.owner, "--url", seen[s.issue_title])
             continue
         print("  " + ("create" if args.apply else "would ") + line)
         if not args.apply:

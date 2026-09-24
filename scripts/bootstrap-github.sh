@@ -27,9 +27,11 @@ say "Preflight"
 gh auth status >/dev/null 2>&1 || { echo "gh is not authenticated"; exit 1; }
 SCOPES="$(gh auth status 2>&1 | grep -i 'token scopes' || true)"
 echo "  $SCOPES"
+HAS_PROJECT=true
 if ! grep -q "project" <<<"$SCOPES"; then
-  echo "  missing 'project' scope. Run:  gh auth refresh -s project,read:project"
-  $APPLY && exit 1
+  HAS_PROJECT=false
+  echo "  missing 'project' scope: steps 1-3, 5, 6 run; the board (step 4) is skipped."
+  echo "  later:  gh auth refresh -s project,read:project  &&  scripts/bootstrap-github.sh --apply   (idempotent)"
 fi
 cd "$ROOT"
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || { echo "not a git repo"; exit 1; }
@@ -75,11 +77,13 @@ for entry in "${MS[@]}"; do
 done
 
 say "4. Project board '$PROJECT_TITLE' (user-level, spans api + web)"
-PROJECT_JSON="$(gh project list --owner "$OWNER" --format json --limit 50 2>/dev/null || echo '{"projects":[]}')"
-PROJECT_NUM="$(printf '%s' "$PROJECT_JSON" | python3 -c 'import sys,json; d=json.loads(sys.stdin.read() or "{}"); print(next((p["number"] for p in d.get("projects",[]) if p["title"]==sys.argv[1]), ""))' "$PROJECT_TITLE" 2>/dev/null || true)"
+PROJECT_NUM=""
+if ! $HAS_PROJECT; then echo "  skipped (no project scope)"; fi
+$HAS_PROJECT && PROJECT_JSON="$(gh project list --owner "$OWNER" --format json --limit 50 2>/dev/null || echo '{"projects":[]}')"
+$HAS_PROJECT && PROJECT_NUM="$(printf '%s' "$PROJECT_JSON" | python3 -c 'import sys,json; d=json.loads(sys.stdin.read() or "{}"); print(next((p["number"] for p in d.get("projects",[]) if p["title"]==sys.argv[1]), ""))' "$PROJECT_TITLE" 2>/dev/null || true)"
 if [[ -n "$PROJECT_NUM" ]]; then
   echo "  exists: #$PROJECT_NUM"
-else
+elif $HAS_PROJECT; then
   if $APPLY; then
     PROJECT_NUM="$(gh project create --owner "$OWNER" --title "$PROJECT_TITLE" --format json | python3 -c 'import sys,json; print(json.load(sys.stdin)["number"])')"
     echo "  created: #$PROJECT_NUM"
@@ -97,11 +101,12 @@ if [[ -n "$PROJECT_NUM" ]]; then
 fi
 
 say "5. Branch protection on main"
-PROT='{"required_status_checks":{"strict":true,"contexts":["lint","build-test","security","openapi-diff"]},"enforce_admins":true,"required_pull_request_reviews":{"required_approving_review_count":0},"restrictions":null,"required_linear_history":true,"allow_force_pushes":false,"allow_deletions":false,"required_conversation_resolution":true}'
+# Required check contexts are added by scripts/require-checks.sh once the CI workflow exists (TD-3).
+PROT='{"required_status_checks":null,"enforce_admins":true,"required_pull_request_reviews":{"required_approving_review_count":0},"restrictions":null,"required_linear_history":true,"allow_force_pushes":false,"allow_deletions":false,"required_conversation_resolution":true}'
 if $APPLY; then
   printf '%s' "$PROT" | gh api -X PUT "repos/$OWNER/$REPO/branches/main/protection" --input - --silent && echo "  protected"
 else
-  echo "  would: PUT repos/$OWNER/$REPO/branches/main/protection (PR required, 4 checks, linear, no force-push, admins included)"
+  echo "  would: PUT repos/$OWNER/$REPO/branches/main/protection (PR required, linear, no force-push, admins included; checks added later by scripts/require-checks.sh)"
 fi
 
 say "6. Backlog -> issues"
