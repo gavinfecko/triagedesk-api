@@ -24,6 +24,8 @@ test:       ## fast unit + slice tests
 	./mvnw -B test
 verify:     ## everything CI runs: tests, coverage gate, format check
 	./mvnw -B verify
+docs:       ## regenerate docs/openapi.yaml from the code (CI fails if it is stale)
+	./mvnw -B test -Dtest=OpenApiSpecTest -Dsurefire.failIfNoSpecifiedTests=false
 fmt:        ## format the code (Spotless, TD-8)
 	./mvnw spotless:apply
 seed:       ## load the demo dataset into the dev database (TD-15)

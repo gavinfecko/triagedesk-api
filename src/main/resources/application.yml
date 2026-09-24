@@ -37,3 +37,17 @@ management:
   info:
     git:
       mode: simple
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+  default-produces-media-type: application/json
+
+triagedesk:
+  version: "@project.version@"
+  docs:
+    public: false   # dev turns this on; in prod the docs are for admins
