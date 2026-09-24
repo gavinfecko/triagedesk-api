@@ -1,0 +1,72 @@
+openapi: 3.1.0
+info:
+  title: TriageDesk API
+  description: "Help desk ticketing for a small IT team: tickets, queues, SLA timers\
+    \ that count business hours, an audit trail and reporting. Errors are RFC 9457\
+    \ Problem Details with a stable `type` per error and a `correlation_id` on every\
+    \ response."
+  license:
+    name: MIT
+    url: https://github.com/gavinfecko/triagedesk-api/blob/main/LICENSE
+  version: 0.1.0-SNAPSHOT
+externalDocs:
+  description: "Architecture, process and backlog"
+  url: https://github.com/gavinfecko/triagedesk-api/tree/main/docs
+servers:
+- url: /
+  description: This deployment
+security:
+- bearerAuth: []
+- basicAuth: []
+paths: {}
+components:
+  schemas:
+    ProblemDetail:
+      type: object
+      description: RFC 9457 Problem Details. `type` is a stable slug under /problems/
+        that clients can switch on.
+      properties:
+        type:
+          type: string
+          example: /problems/validation
+        title:
+          type: string
+          example: Validation failed
+        status:
+          type: integer
+          format: int32
+          example: 400
+        detail:
+          type: string
+          example: 2 fields failed validation
+        instance:
+          type: string
+          example: /api/v1/tickets
+        correlation_id:
+          type: string
+          example: 8b1f2c0e-4d3a-4f0e-9a6b-2c7d1e5f9a10
+        errors:
+          type: array
+          description: Present on validation problems only
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: title
+              message:
+                type: string
+                example: size must be between 5 and 120
+      required:
+      - correlation_id
+      - status
+      - title
+      - type
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -15,3 +15,6 @@ management:
   endpoint:
     health:
       show-details: always
+triagedesk:
+  docs:
+    public: true

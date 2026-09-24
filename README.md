@@ -13,6 +13,7 @@ _Working name. Planning started 2026-09-24; Sprint 0 begins 2026-09-25._
 | System design: modules, domain model, state machine, SLA engine, security, API, data, tests, CI/CD | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | How the work is run: roles, cadence, board, stories, DoR/DoD, branching, releases, metrics, Jira mapping | [docs/PROCESS.md](docs/PROCESS.md) |
 | Every user story with acceptance criteria and points (imported to Issues by a script) | [docs/BACKLOG.md](docs/BACKLOG.md) |
+| The API contract, regenerated from the code on every build and diffed in CI | [docs/openapi.yaml](docs/openapi.yaml) |
 | Decisions and their reasons | [docs/adr/](docs/adr/) |
 | Sprint logs: goal, daily, review, retro, metrics | [docs/sprints/](docs/sprints/) |
 
@@ -20,7 +21,7 @@ _Working name. Planning started 2026-09-24; Sprint 0 begins 2026-09-25._
 ```bash
 # JDK 21 (Temurin from adoptium.net; Maven comes with the ./mvnw wrapper), Docker (Colima or Docker Desktop)
 make up                          # PostgreSQL 16 + Mailpit in Docker (starts Colima if needed)
-make run                         # dev profile, http://localhost:8080  (Swagger UI from TD-6)
+make run                         # dev profile: http://localhost:8080/swagger-ui.html
 make verify                      # unit + slice + integration tests on real PostgreSQL, coverage gate, format check
 ```
 `make` picks the JDK with `/usr/libexec/java_home -F -v 21` and points Testcontainers at the active Docker context, so Colima works without extra setup.
