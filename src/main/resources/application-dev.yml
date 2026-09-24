@@ -1,9 +1,16 @@
-# Local development: PostgreSQL and Mailpit from compose.yaml (TD-2). Nothing here is a secret.
+# Local development: PostgreSQL and Mailpit from compose.yaml. Nothing here is a secret.
 spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/triagedesk}
     username: ${DB_USER:triagedesk}
     password: ${DB_PASSWORD:triagedesk}
+  docker:
+    compose:
+      enabled: true
+      lifecycle-management: start-only
+  mail:
+    host: localhost
+    port: 1025
 management:
   endpoint:
     health:

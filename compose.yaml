@@ -1,0 +1,35 @@
+# Local development services. `make up` starts them and waits for the health checks.
+# In the dev profile Spring Boot's Docker Compose support also starts this file automatically (start-only).
+name: triagedesk
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: triagedesk
+      POSTGRES_USER: triagedesk
+      POSTGRES_PASSWORD: triagedesk
+    command: ["postgres", "-c", "timezone=UTC", "-c", "log_min_duration_statement=250"]
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U triagedesk -d triagedesk"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  mailpit:
+    image: axllent/mailpit:latest
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+    ports:
+      - "8025:8025"   # web UI
+      - "1025:1025"   # SMTP
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+volumes:
+  pgdata:
