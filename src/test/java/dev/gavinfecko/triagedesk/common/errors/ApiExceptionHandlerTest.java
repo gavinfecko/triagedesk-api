@@ -62,6 +62,20 @@ class ApiExceptionHandlerTest {
 
     @Test
     @WithMockUser
+    void invalidRequestParameterIsA400ValidationProblemNamingTheParameter() {
+        MvcTestResult result = mvc.get().uri("/api/v1/probe/page?size=0").exchange();
+        assertThat(result).hasStatus(HttpStatus.BAD_REQUEST);
+        assertThat(result).bodyJson().extractingPath("$.type").isEqualTo("/problems/validation");
+        assertThat(result).bodyJson().extractingPath("$.errors[0].field").isEqualTo("size");
+        assertThat(result)
+                .bodyJson()
+                .extractingPath("$.errors[0].message")
+                .asString()
+                .contains("1");
+    }
+
+    @Test
+    @WithMockUser
     void validBodyPassesThrough() {
         assertThat(mvc.post()
                         .uri("/api/v1/probe/validate")

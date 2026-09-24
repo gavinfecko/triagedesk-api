@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Test-only endpoints that raise each kind of error the handler must shape. Never on the main classpath. */
@@ -42,6 +43,11 @@ class ProbeController {
     @GetMapping("/service-violation")
     void serviceViolation() {
         throw new ConstraintViolationException(validator.validate(new CreateThing("ab", 0)));
+    }
+
+    @GetMapping("/page")
+    String page(@RequestParam @Min(1) int size) {
+        return "size=" + size;
     }
 
     @GetMapping("/not-found")

@@ -16,10 +16,12 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
@@ -45,6 +47,24 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .body(validationProblem(errors));
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleHandlerMethodValidationException(
+            HandlerMethodValidationException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        List<FieldProblem> errors = ex.getParameterValidationResults().stream()
+                .flatMap(result -> result.getResolvableErrors().stream()
+                        .map(error ->
+                                new FieldProblem(parameterName(result), String.valueOf(error.getDefaultMessage()))))
+                .toList();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(validationProblem(errors));
+    }
+
+    private static String parameterName(ParameterValidationResult result) {
+        String name = result.getMethodParameter().getParameterName();
+        return name == null ? "arg" + result.getMethodParameter().getParameterIndex() : name;
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
