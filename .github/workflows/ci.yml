@@ -87,8 +87,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      # Wired for real in TD-6: regenerate docs/openapi.yaml and fail on breaking changes without the label.
-      - run: echo "openapi-diff is a stub until TD-6 commits docs/openapi.yaml"
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-java@v6
+        with: { distribution: temurin, java-version: "21", cache: maven }
+      - name: Regenerate docs/openapi.yaml from the code
+        run: ./mvnw $MAVEN_ARGS test -Dtest=OpenApiSpecTest -Dsurefire.failIfNoSpecifiedTests=false
+      - name: The committed spec must match the code
+        run: |
+          if ! git diff --exit-code -- docs/openapi.yaml; then
+            echo "::error file=docs/openapi.yaml::out of date. Run 'make docs' and commit the result."
+            exit 1
+          fi
+      - name: No breaking changes against main (unless labelled breaking-change)
+        if: github.event_name == 'pull_request'
+        continue-on-error: ${{ contains(github.event.pull_request.labels.*.name, 'breaking-change') }}
+        run: |
+          if ! git show origin/main:docs/openapi.yaml > /tmp/base.yaml 2>/dev/null; then
+            echo "no spec on main yet, nothing to compare"; exit 0
+          fi
+          docker run --rm -v /tmp/base.yaml:/base.yaml:ro -v "$PWD/docs/openapi.yaml:/head.yaml:ro" \
+            openapitools/openapi-diff:latest /base.yaml /head.yaml --fail-on-incompatible --markdown /dev/stdout
 
   docker:
     name: docker
