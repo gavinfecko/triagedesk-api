@@ -6,7 +6,7 @@ Staff open tickets, agents work them from queues, SLA timers count down in **bus
 
 ![CI](https://github.com/gavinfecko/triagedesk-api/actions/workflows/ci.yml/badge.svg) ![Java](https://img.shields.io/badge/Java-21-blue) ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-6DB33F) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
-_Working name. Planning started 2026-09-24; Sprint 0 began the same day._
+_Working name. Planning and Sprint 0 both happened on 2026-09-24; Sprint 1 starts 2026-09-29._
 
 ## Docs
 | Read this for | File |
@@ -39,7 +39,7 @@ make verify                      # unit + slice + integration tests on real Post
 - [x] Concept, scope and release plan decided (2026-09-24, see docs/PLAN.md)
 - [x] Architecture and ten ADRs written (2026-09-24, see docs/ARCHITECTURE.md, docs/adr/)
 - [x] Agile process defined and backlog of 68 stories with acceptance criteria (2026-09-24, see docs/PROCESS.md, docs/BACKLOG.md)
-- [ ] Sprint 0: skeleton, CI, board, error model, OpenAPI (`v0.1.0`)
+- [x] Sprint 0: skeleton, Compose + Flyway, CI with four gates and a GHCR image, Problem Details, OpenAPI + Swagger, Actuator + JSON logs, ArchUnit + Spotless + JaCoCo (`v0.1.0`, 2026-09-24; the project board waits on an OAuth scope)
 - [ ] Sprint 1: identity and first ticket (`v0.2.0`)
 - [ ] Sprint 2: agent workflow, state machine, audit (`v0.3.0`)
 - [ ] Sprint 3: SLA engine and email (`v0.4.0`)
