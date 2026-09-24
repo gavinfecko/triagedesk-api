@@ -15,6 +15,7 @@ set -euo pipefail
 
 OWNER="gavinfecko"
 REPO="triagedesk-api"
+VISIBILITY="${VISIBILITY:-private}"
 PROJECT_TITLE="TriageDesk"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APPLY=false
@@ -104,7 +105,11 @@ say "5. Branch protection on main"
 # Required check contexts are added by scripts/require-checks.sh once the CI workflow exists (TD-3).
 PROT='{"required_status_checks":null,"enforce_admins":true,"required_pull_request_reviews":{"required_approving_review_count":0},"restrictions":null,"required_linear_history":true,"allow_force_pushes":false,"allow_deletions":false,"required_conversation_resolution":true}'
 if $APPLY; then
-  printf '%s' "$PROT" | gh api -X PUT "repos/$OWNER/$REPO/branches/main/protection" --input - --silent && echo "  protected"
+  if printf '%s' "$PROT" | gh api -X PUT "repos/$OWNER/$REPO/branches/main/protection" --input - --silent 2>/dev/null; then
+    echo "  protected"
+  else
+    echo "  skipped: branch protection needs a public repo (or GitHub Pro). Flip visibility, then re-run this script."
+  fi
 else
   echo "  would: PUT repos/$OWNER/$REPO/branches/main/protection (PR required, linear, no force-push, admins included; checks added later by scripts/require-checks.sh)"
 fi
