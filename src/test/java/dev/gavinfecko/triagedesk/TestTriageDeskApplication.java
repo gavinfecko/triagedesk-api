@@ -6,6 +6,8 @@ import org.springframework.boot.SpringApplication;
 public class TestTriageDeskApplication {
 
     public static void main(String[] args) {
-        SpringApplication.from(TriageDeskApplication::main).with(TestcontainersConfiguration.class).run(args);
+        SpringApplication.from(TriageDeskApplication::main)
+                .with(TestcontainersConfiguration.class)
+                .run(args);
     }
 }

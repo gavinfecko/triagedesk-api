@@ -29,7 +29,17 @@ class RequestLogFilterTest {
         mvc.get().uri("/actuator/info").exchange();
         assertThat(output.getOut().lines().filter(l -> l.contains("GET /actuator/info -> 200")))
                 .hasSize(1)
-                .first().asString().contains(" ms)").contains("user_id=agent.ana");
+                .first()
+                .asString()
+                .contains(" ms)")
+                .contains("user_id=agent.ana");
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void queryStringIsPartOfTheLoggedPath(CapturedOutput output) {
+        mvc.get().uri("/actuator/metrics?tag=none").exchange();
+        assertThat(output.getOut()).contains("GET /actuator/metrics?tag=none -> ");
     }
 
     @Test

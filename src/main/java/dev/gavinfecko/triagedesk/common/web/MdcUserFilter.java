@@ -22,6 +22,7 @@ public class MdcUserFilter extends OncePerRequestFilter {
 
     /** Spring Boot registers the security filter chain at -100; this runs right after it. */
     static final int AFTER_SECURITY = -99;
+
     public static final String MDC_KEY = "user_id";
     static final String USER_ATTRIBUTE = MdcUserFilter.class.getName() + ".user";
 

@@ -46,6 +46,8 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
 
     private static String incoming(HttpServletRequest request) {
         String header = request.getHeader(HEADER);
-        return header != null && SAFE.matcher(header).matches() ? header : UUID.randomUUID().toString();
+        return header != null && SAFE.matcher(header).matches()
+                ? header
+                : UUID.randomUUID().toString();
     }
 }

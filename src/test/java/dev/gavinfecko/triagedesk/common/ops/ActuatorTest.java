@@ -56,6 +56,9 @@ class ActuatorTest {
         assertThat(info).bodyJson().extractingPath("$.build.artifact").isEqualTo("triagedesk-api");
         assertThat(info).bodyJson().extractingPath("$.build.version").asString().isNotBlank();
         assertThat(mvc.get().uri("/actuator/metrics/jvm.memory.used")).hasStatusOk();
-        assertThat(mvc.get().uri("/actuator/prometheus")).hasStatusOk().bodyText().contains("jvm_memory_used_bytes");
+        assertThat(mvc.get().uri("/actuator/prometheus"))
+                .hasStatusOk()
+                .bodyText()
+                .contains("jvm_memory_used_bytes");
     }
 }
