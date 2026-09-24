@@ -36,11 +36,12 @@ public class SecurityConfig {
         return http.csrf(csrf -> csrf.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(Customizer.withDefaults())
-                .exceptionHandling(e -> e
-                        .authenticationEntryPoint((req, res, ex) -> resolver.resolveException(req, res, null, ex))
-                        .accessDeniedHandler((req, res, ex) -> resolver.resolveException(req, res, null, ex)))
+                .exceptionHandling(
+                        e -> e.authenticationEntryPoint((req, res, ex) -> resolver.resolveException(req, res, null, ex))
+                                .accessDeniedHandler((req, res, ex) -> resolver.resolveException(req, res, null, ex)))
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**")
+                            .permitAll();
                     auth.requestMatchers("/actuator/**").hasRole("ADMIN");
                     var docs = auth.requestMatchers(HttpMethod.GET, DOCS_PATHS);
                     if (docsPublic) {

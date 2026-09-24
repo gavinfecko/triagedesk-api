@@ -7,6 +7,7 @@ spring:
   datasource:
     hikari:
       connection-init-sql: SET TIME ZONE 'UTC'   # the JDBC driver would otherwise send the JVM's zone
+      initialization-fail-timeout: 10000         # tolerate a database that is a few seconds behind us
   jpa:
     open-in-view: false
     hibernate:

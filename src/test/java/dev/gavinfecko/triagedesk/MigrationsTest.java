@@ -28,13 +28,16 @@ class MigrationsTest {
 
     @Test
     void baselineEnablesTheExtensionsTheSchemaDependsOn() {
-        List<String> extensions = jdbc.sql("select extname from pg_extension").query(String.class).list();
+        List<String> extensions =
+                jdbc.sql("select extname from pg_extension").query(String.class).list();
         assertThat(extensions).contains("pg_trgm", "citext");
     }
 
     @Test
     void databaseTimeZoneIsUtc() {
-        String zone = jdbc.sql("select current_setting('timezone')").query(String.class).single();
+        String zone = jdbc.sql("select current_setting('timezone')")
+                .query(String.class)
+                .single();
         assertThat(zone).isEqualTo("UTC");
     }
 }

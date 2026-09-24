@@ -23,10 +23,11 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = {
-    "triagedesk.docs.public=true",
-    "springdoc.paths-to-exclude=/api/v1/probe/**" // test-only endpoints must not enter the contract
-})
+@TestPropertySource(
+        properties = {
+            "triagedesk.docs.public=true",
+            "springdoc.paths-to-exclude=/api/v1/probe/**" // test-only endpoints must not enter the contract
+        })
 class OpenApiSpecTest {
 
     static final Path SPEC = Path.of("docs", "openapi.yaml");
@@ -39,7 +40,10 @@ class OpenApiSpecTest {
         MvcTestResult result = mvc.get().uri("/v3/api-docs.yaml").exchange();
         assertThat(result).hasStatusOk();
         String yaml = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
-        assertThat(yaml).contains("title: TriageDesk API").contains("ProblemDetail").doesNotContain("/probe/");
+        assertThat(yaml)
+                .contains("title: TriageDesk API")
+                .contains("ProblemDetail")
+                .doesNotContain("/probe/");
         Files.createDirectories(SPEC.getParent());
         Files.writeString(SPEC, yaml.endsWith("\n") ? yaml : yaml + "\n", StandardCharsets.UTF_8);
     }
@@ -48,9 +52,15 @@ class OpenApiSpecTest {
     void problemDetailSchemaAndSecuritySchemesAreDeclared() {
         MvcTestResult result = mvc.get().uri("/v3/api-docs").exchange();
         assertThat(result).hasStatusOk();
-        assertThat(result).bodyJson().extractingPath("$.components.schemas.ProblemDetail.required")
-                .asArray().contains("type", "status", "correlation_id");
-        assertThat(result).bodyJson().extractingPath("$.components.securitySchemes.bearerAuth.scheme").isEqualTo("bearer");
+        assertThat(result)
+                .bodyJson()
+                .extractingPath("$.components.schemas.ProblemDetail.required")
+                .asArray()
+                .contains("type", "status", "correlation_id");
+        assertThat(result)
+                .bodyJson()
+                .extractingPath("$.components.securitySchemes.bearerAuth.scheme")
+                .isEqualTo("bearer");
     }
 
     @Test

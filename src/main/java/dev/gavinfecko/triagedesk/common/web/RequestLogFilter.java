@@ -39,7 +39,8 @@ public class RequestLogFilter extends OncePerRequestFilter {
             long millis = (System.nanoTime() - started) / 1_000_000;
             Object user = request.getAttribute(MdcUserFilter.USER_ATTRIBUTE);
             String query = request.getQueryString();
-            log.info("{} {}{} -> {} ({} ms){}",
+            log.info(
+                    "{} {}{} -> {} ({} ms){}",
                     request.getMethod(),
                     request.getRequestURI(),
                     query == null ? "" : "?" + query,

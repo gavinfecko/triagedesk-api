@@ -67,7 +67,10 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(AuthenticationException.class)
     ProblemDetail unauthenticated(AuthenticationException ex) {
-        return problem(HttpStatus.UNAUTHORIZED, "unauthenticated", "Authentication required",
+        return problem(
+                HttpStatus.UNAUTHORIZED,
+                "unauthenticated",
+                "Authentication required",
                 "Provide a valid credential in the Authorization header");
     }
 
@@ -79,7 +82,10 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(Exception.class)
     ProblemDetail unexpected(Exception ex) {
         log.error("Unhandled exception, correlation_id={}", CorrelationIdFilter.current(), ex);
-        return problem(HttpStatus.INTERNAL_SERVER_ERROR, "internal", "Unexpected error",
+        return problem(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "internal",
+                "Unexpected error",
                 "Something went wrong on our side. Quote the correlation id when reporting it.");
     }
 
@@ -101,15 +107,18 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     private static ProblemDetail validationProblem(List<FieldProblem> errors) {
-        ProblemDetail pd = problem(HttpStatus.BAD_REQUEST, "validation", "Validation failed",
+        ProblemDetail pd = problem(
+                HttpStatus.BAD_REQUEST,
+                "validation",
+                "Validation failed",
                 errors.size() + " field" + (errors.size() == 1 ? "" : "s") + " failed validation");
         pd.setProperty("errors", errors);
         return pd;
     }
 
     private static void decorate(ProblemDetail pd, String slug) {
-        URI type = pd.getType();
-        if (type == null || "about:blank".equals(type.toString())) {
+        if (pd.getType()
+                == null) { // Framework 7 leaves the type unset (implied about:blank); a handler's own type wins
             pd.setType(URI.create(TYPE_PREFIX + slug));
         }
         pd.setProperty("correlation_id", CorrelationIdFilter.current());
@@ -122,7 +131,6 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
             case 405 -> "method-not-allowed";
             case 406 -> "not-acceptable";
             case 415 -> "unsupported-media-type";
-            case 503 -> "unavailable";
             default -> "http-" + status.value();
         };
     }
