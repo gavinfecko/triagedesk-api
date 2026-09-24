@@ -1,0 +1,10 @@
+# Local development: PostgreSQL and Mailpit from compose.yaml (TD-2). Nothing here is a secret.
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/triagedesk}
+    username: ${DB_USER:triagedesk}
+    password: ${DB_PASSWORD:triagedesk}
+management:
+  endpoint:
+    health:
+      show-details: always
