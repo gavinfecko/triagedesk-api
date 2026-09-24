@@ -28,7 +28,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus   # only health is public (SecurityConfig)
   endpoint:
     health:
       probes:
@@ -36,7 +36,11 @@ management:
       show-details: never
   info:
     git:
-      mode: simple
+      mode: full
+    java:
+      enabled: true
+    os:
+      enabled: true
 
 springdoc:
   api-docs:
@@ -51,3 +55,15 @@ triagedesk:
   version: "@project.version@"
   docs:
     public: false   # dev turns this on; in prod the docs are for admins
+
+---
+# dev and prod log one JSON object per line (Spring Boot structured logging, Logstash layout,
+# MDC keys correlation_id / user_id included); the default and test profiles keep plain text.
+spring:
+  config:
+    activate:
+      on-profile: dev | prod
+logging:
+  structured:
+    format:
+      console: logstash

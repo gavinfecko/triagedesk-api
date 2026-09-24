@@ -14,7 +14,7 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 /**
  * Stateless API security. Health probes are public so the platform can check liveness and
- * readiness; everything else requires authentication. Security failures (401/403) are routed to
+ * readiness; the other Actuator endpoints are for admins; everything else requires authentication. Security failures (401/403) are routed to
  * the MVC exception resolver so they come out as Problem Details like every other error. The
  * OpenAPI document and Swagger UI are public only where {@code triagedesk.docs.public} says so
  * (dev); otherwise they need the ADMIN role. JWT support arrives with TD-11.
@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .accessDeniedHandler((req, res, ex) -> resolver.resolveException(req, res, null, ex)))
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll();
+                    auth.requestMatchers("/actuator/**").hasRole("ADMIN");
                     var docs = auth.requestMatchers(HttpMethod.GET, DOCS_PATHS);
                     if (docsPublic) {
                         docs.permitAll();
