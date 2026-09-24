@@ -48,7 +48,7 @@ else
     --homepage "https://github.com/$OWNER/$REPO/blob/main/docs/PLAN.md"
 fi
 run gh repo edit "$OWNER/$REPO" --add-topic spring-boot --add-topic java --add-topic postgresql --add-topic rest-api --add-topic agile --add-topic help-desk \
-  --enable-issues --enable-projects --delete-branch-on-merge --enable-squash-merge --disable-merge-commit --disable-rebase-merge
+  --enable-issues --enable-projects --delete-branch-on-merge --enable-squash-merge --enable-merge-commit=false --enable-rebase-merge=false --squash-merge-commit-message pr-title
 
 say "2. Labels from .github/labels.yml"
 python3 - "$ROOT/.github/labels.yml" <<'PY' | while IFS=$'\t' read -r name color desc; do
