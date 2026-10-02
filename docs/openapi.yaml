@@ -213,6 +213,70 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
   /api/v1/tickets:
+    get:
+      tags:
+      - Tickets
+      summary: "List tickets, newest first: your own as a requester, all of them as\
+        \ an agent or admin"
+      operationId: list_1
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 25
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageResponseTicketSummary"
+        "400":
+          description: Validation failed or the request is malformed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "403":
+          description: The caller's role does not allow this
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: The resource does not exist or is not visible to the caller
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: A business rule refused the request (see the type slug)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: Unexpected error; quote the correlation id
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
     post:
       tags:
       - Tickets
@@ -597,6 +661,62 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
+  /api/v1/tickets/{key}:
+    get:
+      tags:
+      - Tickets
+      summary: One ticket by its key (HD-001234); someone else's ticket is a 404 for
+        requesters
+      operationId: get
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketView"
+        "400":
+          description: Validation failed or the request is malformed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "403":
+          description: The caller's role does not allow this
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: The resource does not exist or is not visible to the caller
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: A business rule refused the request (see the type slug)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: Unexpected error; quote the correlation id
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
   /api/v1/queues:
     get:
       tags:
@@ -930,6 +1050,53 @@ components:
             $ref: "#/components/schemas/UserView"
         page:
           $ref: "#/components/schemas/PageMeta"
+    PageResponseTicketSummary:
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TicketSummary"
+        page:
+          $ref: "#/components/schemas/PageMeta"
+    TicketSummary:
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+          enum:
+          - NEW
+          - OPEN
+          - PENDING
+          - RESOLVED
+          - CLOSED
+          - CANCELLED
+        priority:
+          type: string
+          enum:
+          - P1_CRITICAL
+          - P2_HIGH
+          - P3_MEDIUM
+          - P4_LOW
+        category:
+          type: string
+        queue:
+          type: string
+        requester:
+          $ref: "#/components/schemas/Person"
+        assignee:
+          $ref: "#/components/schemas/Person"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
     CategoryView:
       properties:
         id:
