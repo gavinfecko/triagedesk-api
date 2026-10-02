@@ -31,28 +31,30 @@ Users can register, log in and open a ticket they can read back, with roles enfo
 | Mon 09-29 | No project time | | |
 | Tue 09-30 | No project time | | |
 | Wed 10-01 | No project time | | |
-| Thu 10-02 | Planning. Dependabot: ArchUnit 1.5.1 merged; Spotless 3.10.3 reformatted and merged; Temurin 25 runtime image declined (ADR-0002 pins 21) and major Temurin bumps ignored. | TD-10 → TD-14 | Board scope approval pending in the browser |
+| Thu 10-02 | Planning. Dependabot: ArchUnit 1.5.1 and Maven 3.10.0 merged; Spotless 3.10.3 reformatted and merged; Temurin 25 runtime image declined (ADR-0002 pins 21) and major Temurin bumps ignored. All eight stories built and merged one PR each, in order. Real problems found on the way: springdoc documented camelCase while the API speaks snake_case (fixed with a snake_case model resolver and a test); gitleaks flagged a PEM header the RS256 test assembles around a generated key (literal split, branch history rewritten); the Maven bump stored `mvnw.cmd` with CRLF, breaking rebases (#89); `make seed` failed because the security config required MVC beans without a web server (caught only by running the real demo, fixed in TD-15). | Review, `v0.2.0` | Board scope still needs a browser approval |
 | Fri 10-03 | | | |
 | Sat 10-04 | | | |
 | Sun 10-05 | | | |
 
-## Review (Sunday)
-- **Demoed:**
+## Review (brought forward to Thursday 2026-10-02 because the goal was met; the time-box still ends 10-05)
+- **Demoed** against the dev database after `make up && make seed && make run`: the nine demo users log in; Rosa (requester) sees only her 10 of the 60 seeded tickets, opens a new one and gets a warning that her `queue_id` was ignored; Kim (requester) gets 404 for Rosa's ticket; Ana (agent) sees all tickets and Rosa's new one, and gets 403 on user administration; the admin lists agents. Every request leaves one access-log line with the user id and correlation id.
 - **Release:** `v0.2.0`
-- **Not finished:**
-- **Accepted by Product Owner:**
+- **Not finished:** TD-4 (board and branch protection) — still blocked on a browser approval of the `project` scope and on repository visibility; no code work remains.
+- **Accepted by Product Owner:** TD-10 (#84), TD-11 (#86), TD-12 (#87), TD-13 (#88), TD-14 (#90), TD-20 (#91), TD-21 (#92) and TD-15 (#93), each against its acceptance criteria as amended at planning; the PR "Evidence" sections list the tests.
 
 ## Retro
 | Keep | Stop | Try |
 |---|---|---|
-| | | |
+| Running the real demo (`make up && make seed && make run` + curl) before calling the sprint done. It found the one bug 123 tests could not: a profile without a web server. | Chaining git commands with `|| true` in scripts that push. One merge with conflict markers reached a Dependabot branch before it was repaired; scripts that push now stop on the first failure. | Add the demo walkthrough as a scripted smoke test (`scripts/demo-smoke.sh`) so CI runs it on every release tag. |
+| One story per PR with the executable role matrix growing by a row per endpoint; the matrix caught nothing this sprint, which is the point. | Writing source literals that look like secrets, even in tests. | A change-password endpoint is missing (admins set temporary passwords, users cannot replace them): raise it at Sprint 2 refinement. |
 
 ## Metrics
 | Metric | Value |
 |---|---|
 | Committed points | 24 |
-| Delivered points (velocity) | |
-| Commitment accuracy | |
-| Median cycle time | |
-| Coverage | |
-| Escaped bugs | |
+| Delivered points (velocity) | 24 |
+| Commitment accuracy | 100 % |
+| Median cycle time (In Progress → Done) | under one hour per story |
+| Coverage (JaCoCo line / branch) | 97.7 % / 89.6 % (gate 80 / 70) |
+| Tests | 123 |
+| Escaped bugs | 0 found after acceptance; 1 caught before merge by the demo run |
