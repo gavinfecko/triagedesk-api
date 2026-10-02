@@ -100,7 +100,7 @@ Default business calendar: Mon–Fri 08:00–18:00 `America/New_York`, US federa
 
 ## 6. Security model
 - **Authentication:** `POST /api/v1/auth/login` → access token (JWT, 15 min, claims `sub`, `role`, `jti`) + refresh token (opaque, 7 days, stored hashed, rotated on every use, family revoked on reuse). `POST /auth/refresh`, `POST /auth/logout`. Passwords BCrypt cost 12, minimum 12 chars, checked against a small breached-password list.
-- **Authorization:** roles `ADMIN > AGENT > REQUESTER`. URL-level rules in the security filter chain plus `@PreAuthorize` on services for ownership checks (a requester only sees their own tickets and public comments).
+- **Authorization:** roles `ADMIN > AGENT > REQUESTER`, carried in the access token's `role` claim. Authorization is enforced twice: URL-level rules in the security filter chain, and checks in the application services (`@PreAuthorize` for role rules, query-level ownership for "a requester only sees their own tickets"), so a future controller cannot bypass them. `AuthorizationMatrixTest` executes the role column of §7 for every endpoint, both ways, plus anonymous callers.
 - **Throttling:** login attempts per account and per IP (Bucket4j in-memory in v1); lockout for 15 min after 10 failures; Problem Details `429` with `Retry-After`.
 - **Transport and headers:** HTTPS at the platform edge, HSTS, `X-Content-Type-Options`, CSP for Swagger UI only, CORS allow-list from config.
 - **Secrets:** environment variables only; `.env.example` committed; gitleaks in CI and as a pre-commit hook.
@@ -127,7 +127,7 @@ Default business calendar: Mon–Fri 08:00–18:00 `America/New_York`, US federa
 | Method + path | Role | Story |
 |---|---|---|
 | `POST /auth/register` `POST /auth/login` `POST /auth/refresh` `POST /auth/logout` | public / any | TD-10..12 |
-| `GET /users/me` · `GET/POST/PATCH /users` · `POST /users/{id}/deactivate` | any / ADMIN | TD-14 |
+| `GET /users/me` · `GET/POST/PATCH /users` · `POST /users/{id}/deactivate` | any / ADMIN | TD-11, TD-14 |
 | `GET/POST /tickets` · `GET/PATCH /tickets/{key}` | by ownership | TD-20..22, 25 |
 | `POST /tickets/{key}/transitions` (`{"to":"PENDING","comment":"..."}`) | per state table | TD-23, 28 |
 | `POST /tickets/{key}/assign` · `POST /tickets/{key}/queue` | AGENT / ADMIN | TD-24 |

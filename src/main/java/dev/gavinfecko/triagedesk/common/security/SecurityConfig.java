@@ -59,6 +59,8 @@ public class SecurityConfig {
                             .permitAll();
                     auth.requestMatchers("/actuator/**").hasRole("ADMIN");
                     auth.requestMatchers(HttpMethod.POST, PUBLIC_POSTS).permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated();
+                    auth.requestMatchers("/api/v1/users", "/api/v1/users/**").hasRole("ADMIN");
                     var docs = auth.requestMatchers(HttpMethod.GET, DOCS_PATHS);
                     if (docsPublic) {
                         docs.permitAll();
