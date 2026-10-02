@@ -1,7 +1,9 @@
 package dev.gavinfecko.triagedesk.ticket.api;
 
+import dev.gavinfecko.triagedesk.common.web.PageResponse;
 import dev.gavinfecko.triagedesk.ticket.application.TicketService;
 import dev.gavinfecko.triagedesk.ticket.application.TicketService.NewTicket;
+import dev.gavinfecko.triagedesk.ticket.application.TicketSummary;
 import dev.gavinfecko.triagedesk.ticket.application.TicketView;
 import dev.gavinfecko.triagedesk.ticket.domain.Priority;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,9 +16,12 @@ import java.net.URI;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -54,5 +59,18 @@ public class TicketController {
                 request.queueId()));
         return ResponseEntity.created(URI.create("/api/v1/tickets/" + ticket.key()))
                 .body(ticket);
+    }
+
+    @GetMapping
+    @Operation(summary = "List tickets, newest first: your own as a requester, all of them as an agent or admin")
+    public PageResponse<TicketSummary> list(
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
+        return tickets.list(page, size);
+    }
+
+    @GetMapping("/{key}")
+    @Operation(summary = "One ticket by its key (HD-001234); someone else's ticket is a 404 for requesters")
+    public TicketView get(@PathVariable String key) {
+        return tickets.get(key);
     }
 }
