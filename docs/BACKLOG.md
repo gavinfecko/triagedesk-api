@@ -137,7 +137,7 @@ So that I can open tickets and follow their progress
 - Given a password shorter than 12 characters or on the small breached-password list, then `400 /problems/validation` naming the `password` field.
 - Given registration succeeds, then the password is stored as a BCrypt hash (cost 12) and an `audit_events` row `user.registered` exists.
 
-**Schema:** `users(id uuid pk, email citext unique, display_name, password_hash, role, active bool, created_at, updated_at)`.
+**Schema:** `users(id uuid pk, email varchar unique (stored lower-case, checked), display_name, password_hash, role, active bool, created_at, updated_at)`.
 
 ### TD-11: Log in and receive access and refresh tokens
 **Epic** E1 · **Points** 5 · **Priority** P1 · **Sprint** 1 · **Area** identity
@@ -198,8 +198,8 @@ So that the help desk reflects who actually works here
 **Epic** E1 · **Points** 2 · **Priority** P1 · **Sprint** 1 · **Area** platform · **Type** task
 
 **Acceptance criteria**
-- Given the repeatable migration `R__reference_data.sql`, then queues (`Front Desk`, `Clinical Systems`, `Network`, `Hardware`), categories (`EHR`, `Printer`, `Network/VPN`, `Email/M365`, `Hardware`, `Access request`, `Security incident`, `Other`), the four SLA policies and the default calendar with this year's US federal holidays exist after startup in every profile.
-- Given the `dev` profile, then `make seed` creates admin `admin@clinic.test`, two agents, six requesters (password `Password123!` for all) and ~60 tickets spread across every status, priority, queue and age (some already breached, some at risk) so the dashboard and SLA badges mean something.
+- Given the repeatable migration `R__reference_data.sql`, then queues (`Front Desk`, `Clinical Systems`, `Network`, `Hardware`) and categories (`EHR`, `Printer`, `Network/VPN`, `Email/M365`, `Hardware`, `Access request`, `Security incident`, `Other`) exist after startup in every profile. (Amended at Sprint 1 planning: SLA policies and the calendar are seeded by TD-40/TD-41 with their tables.)
+- Given the `dev` profile, then `make seed` creates admin `admin@clinic.test`, two agents, six requesters (password `Demo-Password-2026` for all; amended at Sprint 1 planning because `Password123!` is on the breached list) and ~60 tickets spread across every status, priority, queue and age (some already breached, some at risk) so lists and the dashboard mean something (breached and at-risk tickets arrive with the SLA engine in Sprint 3).
 - Given the seed runs twice, then nothing is duplicated.
 
 ### TD-16: Login throttling and account lockout
