@@ -1,5 +1,7 @@
 # Local development: PostgreSQL and Mailpit from compose.yaml. Nothing here is a secret.
 spring:
+  config:
+    import: optional:file:.env[.properties]   # JWT_SECRET and friends; `make up` creates .env from .env.example
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/triagedesk}
     username: ${DB_USER:triagedesk}
@@ -18,3 +20,5 @@ management:
 triagedesk:
   docs:
     public: true
+  jwt:
+    secret: ${JWT_SECRET}   # HS256 in dev; prod uses RS256 (application-prod.yml)

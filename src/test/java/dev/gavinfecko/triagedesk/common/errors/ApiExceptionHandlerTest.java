@@ -2,7 +2,9 @@ package dev.gavinfecko.triagedesk.common.errors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.gavinfecko.triagedesk.common.security.JwtConfig;
 import dev.gavinfecko.triagedesk.common.security.SecurityConfig;
+import dev.gavinfecko.triagedesk.common.time.TimeConfig;
 import dev.gavinfecko.triagedesk.common.web.CorrelationIdFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +17,7 @@ import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
 @WebMvcTest(ProbeController.class)
-@Import({SecurityConfig.class, ApiExceptionHandler.class, CorrelationIdFilter.class})
+@Import({SecurityConfig.class, JwtConfig.class, TimeConfig.class, ApiExceptionHandler.class, CorrelationIdFilter.class})
 class ApiExceptionHandlerTest {
 
     @Autowired

@@ -1,8 +1,10 @@
 package dev.gavinfecko.triagedesk.identity.api;
 
+import dev.gavinfecko.triagedesk.identity.application.AuthService;
 import dev.gavinfecko.triagedesk.identity.application.NotBreached;
 import dev.gavinfecko.triagedesk.identity.application.RegistrationService;
 import dev.gavinfecko.triagedesk.identity.application.RegistrationService.Registration;
+import dev.gavinfecko.triagedesk.identity.application.TokenService.TokenPair;
 import dev.gavinfecko.triagedesk.identity.application.UserView;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
@@ -24,10 +26,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final RegistrationService registration;
+    private final AuthService auth;
 
-    public AuthController(RegistrationService registration) {
+    public AuthController(RegistrationService registration, AuthService auth) {
         this.registration = registration;
+        this.auth = auth;
     }
+
+    public record LoginRequest(
+            @NotBlank String email, @NotBlank String password) {}
 
     public record RegisterRequest(
             @NotBlank @Email @Size(max = 320) String email,
@@ -43,5 +50,12 @@ public class AuthController {
         UserView user =
                 registration.register(new Registration(request.email(), request.displayName(), request.password()));
         return ResponseEntity.created(URI.create("/api/v1/users/" + user.id())).body(user);
+    }
+
+    @PostMapping("/login")
+    @Operation(summary = "Exchange email and password for an access token (15 min) and a refresh token (7 days)")
+    @SecurityRequirements
+    public TokenPair login(@Valid @RequestBody LoginRequest request) {
+        return auth.login(request.email(), request.password());
     }
 }

@@ -1,0 +1,4 @@
+# Test-only settings, loaded in addition to src/main/resources/application.yml.
+triagedesk:
+  jwt:
+    secret: test-only-signing-key-not-used-anywhere-else-000

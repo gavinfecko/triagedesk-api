@@ -69,18 +69,12 @@ public class OpenApiConfig {
                         .url("https://github.com/gavinfecko/triagedesk-api/tree/main/docs"))
                 .components(new Components()
                         .addSecuritySchemes(
-                                "basicAuth",
-                                new SecurityScheme()
-                                        .type(SecurityScheme.Type.HTTP)
-                                        .scheme("basic"))
-                        .addSecuritySchemes(
                                 "bearerAuth",
                                 new SecurityScheme()
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")))
-                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
-                .addSecurityItem(new SecurityRequirement().addList("basicAuth"));
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"));
     }
 
     /**

@@ -1,0 +1,4 @@
+# Production: every secret comes from the environment, and a missing one stops startup.
+triagedesk:
+  jwt:
+    private-key: ${JWT_PRIVATE_KEY}   # PKCS#8 PEM, RS256
