@@ -212,6 +212,64 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
+  /api/v1/tickets:
+    post:
+      tags:
+      - Tickets
+      summary: Open a ticket
+      description: Agents and admins may set requester_id (a ticket phoned in) and
+        queue_id. Requesters always open their own ticket in the category's queue;
+        staff-only fields they send are ignored and listed in warnings.
+      operationId: create_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTicketRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketView"
+        "400":
+          description: Validation failed or the request is malformed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "403":
+          description: The caller's role does not allow this
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: The resource does not exist or is not visible to the caller
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: A business rule refused the request (see the type slug)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: Unexpected error; quote the correlation id
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
   /api/v1/auth/register:
     post:
       tags:
@@ -539,6 +597,108 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
+  /api/v1/queues:
+    get:
+      tags:
+      - Reference data
+      summary: Work queues
+      operationId: queues
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ref"
+        "400":
+          description: Validation failed or the request is malformed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "403":
+          description: The caller's role does not allow this
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: The resource does not exist or is not visible to the caller
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: A business rule refused the request (see the type slug)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: Unexpected error; quote the correlation id
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+  /api/v1/categories:
+    get:
+      tags:
+      - Reference data
+      summary: "Ticket categories, each with the queue it routes to"
+      operationId: categories
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryView"
+        "400":
+          description: Validation failed or the request is malformed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "403":
+          description: The caller's role does not allow this
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: The resource does not exist or is not visible to the caller
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: A business rule refused the request (see the type slug)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: Unexpected error; quote the correlation id
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
 components:
   schemas:
     CreateUserRequest:
@@ -589,6 +749,105 @@ components:
         created_at:
           type: string
           format: date-time
+    CreateTicketRequest:
+      properties:
+        title:
+          type: string
+          maxLength: 120
+          minLength: 5
+        description:
+          type: string
+          maxLength: 5000
+          minLength: 0
+        category_id:
+          type: string
+          format: uuid
+        priority:
+          type: string
+          enum:
+          - P1_CRITICAL
+          - P2_HIGH
+          - P3_MEDIUM
+          - P4_LOW
+        requester_id:
+          type: string
+          format: uuid
+        queue_id:
+          type: string
+          format: uuid
+      required:
+      - category_id
+      - description
+      - priority
+      - title
+    Person:
+      properties:
+        id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+    Ref:
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    TicketView:
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum:
+          - NEW
+          - OPEN
+          - PENDING
+          - RESOLVED
+          - CLOSED
+          - CANCELLED
+        priority:
+          type: string
+          enum:
+          - P1_CRITICAL
+          - P2_HIGH
+          - P3_MEDIUM
+          - P4_LOW
+        category:
+          $ref: "#/components/schemas/Ref"
+        queue:
+          $ref: "#/components/schemas/Ref"
+        requester:
+          $ref: "#/components/schemas/Person"
+        assignee:
+          $ref: "#/components/schemas/Person"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        first_responded_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+        closed_at:
+          type: string
+          format: date-time
+        warnings:
+          type: array
+          items:
+            type: string
     RegisterRequest:
       properties:
         email:
@@ -671,6 +930,16 @@ components:
             $ref: "#/components/schemas/UserView"
         page:
           $ref: "#/components/schemas/PageMeta"
+    CategoryView:
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        default_queue_id:
+          type: string
+          format: uuid
     ProblemDetail:
       type: object
       description: RFC 9457 Problem Details. `type` is a stable slug under /problems/
