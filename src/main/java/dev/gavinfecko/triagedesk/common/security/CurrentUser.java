@@ -21,6 +21,15 @@ public record CurrentUser(UUID id, Role role) {
         throw new AuthenticationCredentialsNotFoundException("No access token on this request");
     }
 
+    /** The login session ("family") the caller's access token belongs to. */
+    public static UUID sessionFamily() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth instanceof JwtAuthenticationToken jwt && jwt.getToken().hasClaim(FAMILY_CLAIM)) {
+            return UUID.fromString(jwt.getToken().getClaimAsString(FAMILY_CLAIM));
+        }
+        throw new AuthenticationCredentialsNotFoundException("No session family on this access token");
+    }
+
     public boolean is(Role candidate) {
         return role == candidate;
     }

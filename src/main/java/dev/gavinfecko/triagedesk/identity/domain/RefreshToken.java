@@ -64,9 +64,14 @@ public class RefreshToken {
         return !now.isBefore(expiresAt);
     }
 
-    /** Already exchanged for a newer token, or revoked by logout, reuse or deactivation. */
-    public boolean spent() {
-        return revokedAt != null || replacedBy != null;
+    /** Already exchanged for a newer token: presenting it again means it was copied. */
+    public boolean rotated() {
+        return replacedBy != null;
+    }
+
+    /** Ended by logout, reuse detection or deactivation. */
+    public boolean revoked() {
+        return revokedAt != null;
     }
 
     public void replaceWith(UUID next, Instant now) {

@@ -78,7 +78,8 @@ public class TokenService {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
-    static String hash(String token) {
+    /** SHA-256 hex of a refresh token value; the only form ever stored. */
+    public static String hash(String token) {
         try {
             return HexFormat.of()
                     .formatHex(MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8)));
