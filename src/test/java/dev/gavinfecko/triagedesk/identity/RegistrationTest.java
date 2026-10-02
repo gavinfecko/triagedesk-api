@@ -44,7 +44,12 @@ class RegistrationTest {
         assertThat(result).bodyJson().extractingPath("$.display_name").isEqualTo("Rosa Front Desk");
         assertThat(result).bodyJson().extractingPath("$.role").isEqualTo("REQUESTER");
         assertThat(result).bodyJson().extractingPath("$.active").isEqualTo(true);
-        assertThat(result).bodyText().doesNotContain("password").doesNotContain("correct horse");
+        assertThat(result)
+                .bodyText()
+                .doesNotContain("\"password\"")
+                .doesNotContain("password_hash")
+                .doesNotContain("$2a$")
+                .doesNotContain("correct horse");
     }
 
     @Test
