@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-10-02
+Sprint 1: users can register, log in and open a ticket they can read back, with roles enforced and a demo clinic to explore.
+
+### Added
+- Self-service registration as a requester with a breached-password check; emails stored lower-case; every registration audited (TD-10).
+- Login with JWT access tokens (15 min, HS256 in dev, RS256 in production) and opaque refresh tokens (7 days, stored hashed); `GET /users/me`; failed logins and rejected tokens counted in `auth.login.failed` (TD-11).
+- Refresh-token rotation; replaying a rotated token revokes the whole session family and is audited; logout (TD-12).
+- Admin-only user administration on the URL and in the service; an executable role matrix over every endpoint (TD-13).
+- Admin user management: paged list with filters, create any role with a temporary password, rename and change role with audit, deactivate (ends sessions), last-admin guard (TD-14).
+- Tickets: create with `HD-######` keys, routing by category, staff filing on someone's behalf, warnings for ignored fields, audit row and `TicketCreated` event; categories and queues as reference data (TD-20).
+- My tickets newest first and ticket detail; someone else's ticket is a 404 for requesters, enforced in the service (TD-21).
+- Demo clinic: 9 users and 60 tickets across every status, seeded in dev and by `make seed` (TD-15).
+- API JSON is snake_case, and the OpenAPI document matches it.
+
+### Changed
+- HTTP Basic is gone; bearer tokens are the only scheme.
+
 ## [0.1.0] — 2026-09-24
 Sprint 0: the foundation. Nothing user-facing yet; everything later sprints build on.
 
