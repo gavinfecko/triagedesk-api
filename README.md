@@ -24,6 +24,8 @@ _Working name. Planning and Sprint 0 both happened on 2026-09-24; Sprint 1 start
 # JDK 21 (Temurin from adoptium.net; Maven comes with the ./mvnw wrapper), Docker (Colima or Docker Desktop)
 make up                          # PostgreSQL 16 + Mailpit in Docker (starts Colima if needed)
 make run                         # dev profile: http://localhost:8080/swagger-ui.html
+# demo logins (seeded in dev): admin@clinic.test, ana.ruiz@clinic.test (agent), rosa.diaz@clinic.test (requester)
+# password for all of them: Demo-Password-2026
 make verify                      # unit + slice + integration tests on real PostgreSQL, coverage gate, format check
 ```
 `make` picks the JDK with `/usr/libexec/java_home -F -v 21` and points Testcontainers at the active Docker context, so Colima works without extra setup.

@@ -18,6 +18,8 @@ management:
     health:
       show-details: always
 triagedesk:
+  seed:
+    enabled: true   # idempotent demo clinic: 9 users, 60 tickets (TD-15)
   docs:
     public: true
   jwt:

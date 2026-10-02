@@ -29,5 +29,5 @@ docs:       ## regenerate docs/openapi.yaml from the code (CI fails if it is sta
 	./mvnw -B test -Dtest=OpenApiSpecTest -Dsurefire.failIfNoSpecifiedTests=false
 fmt:        ## format the code (Spotless, TD-8)
 	./mvnw spotless:apply
-seed:       ## load the demo dataset into the dev database (TD-15)
-	@echo "seed arrives with TD-15"
+seed:       ## load the demo clinic (9 users, 60 tickets) into the dev database and exit; `make run` also seeds
+	./mvnw -q spring-boot:run -Dspring-boot.run.profiles=dev,seed
