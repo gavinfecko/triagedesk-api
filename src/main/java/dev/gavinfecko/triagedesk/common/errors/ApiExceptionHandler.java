@@ -75,6 +75,11 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return validationProblem(errors);
     }
 
+    @ExceptionHandler(InvalidFieldException.class)
+    ProblemDetail invalidField(InvalidFieldException ex) {
+        return validationProblem(List.of(new FieldProblem(ex.field(), ex.getMessage())));
+    }
+
     @ExceptionHandler(NotFoundException.class)
     ProblemDetail notFound(NotFoundException ex) {
         return problem(HttpStatus.NOT_FOUND, "not-found", "Not found", ex.getMessage());
