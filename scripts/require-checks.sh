@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Make the four CI jobs required on main. Run once after the CI workflow (TD-3) has reported on a PR.
+# Re-apply main's protection with the four CI jobs required. Safe to run any time (idempotent).
 set -euo pipefail
 OWNER="gavinfecko"; REPO="triagedesk-api"
-CHECKS='{"strict":true,"contexts":["lint","build-test","security","openapi-diff"]}'
-printf '%s' "$CHECKS" | gh api -X PATCH "repos/$OWNER/$REPO/branches/main/protection/required_status_checks" --input - --silent
-echo "main now requires: lint, build-test, security, openapi-diff"
+PROT='{"required_status_checks":{"strict":true,"contexts":["lint","build-test","security","openapi-diff"]},"enforce_admins":true,"required_pull_request_reviews":{"required_approving_review_count":0},"restrictions":null,"required_linear_history":true,"allow_force_pushes":false,"allow_deletions":false,"required_conversation_resolution":true}'
+printf '%s' "$PROT" | gh api -X PUT "repos/$OWNER/$REPO/branches/main/protection" --input - --silent
+echo "main requires a PR and: lint, build-test, security, openapi-diff"
