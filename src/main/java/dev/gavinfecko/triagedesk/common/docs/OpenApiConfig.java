@@ -93,8 +93,9 @@ public class OpenApiConfig {
             }
             openApi.getComponents().addSchemas(PROBLEM_SCHEMA, problemDetailSchema());
             if (openApi.getPaths() != null) {
-                openApi.getPaths().values().forEach(path -> path.readOperations()
-                        .forEach(this::addCommonErrors));
+                openApi.getPaths()
+                        .values()
+                        .forEach(path -> path.readOperations().forEach(this::addCommonErrors));
             }
         };
     }
