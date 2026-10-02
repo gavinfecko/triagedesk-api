@@ -1,5 +1,6 @@
 package dev.gavinfecko.triagedesk.identity.api;
 
+import dev.gavinfecko.triagedesk.common.security.CurrentUser;
 import dev.gavinfecko.triagedesk.identity.application.AuthService;
 import dev.gavinfecko.triagedesk.identity.application.NotBreached;
 import dev.gavinfecko.triagedesk.identity.application.RegistrationService;
@@ -14,10 +15,12 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.net.URI;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -35,6 +38,8 @@ public class AuthController {
 
     public record LoginRequest(
             @NotBlank String email, @NotBlank String password) {}
+
+    public record RefreshRequest(@NotBlank String refreshToken) {}
 
     public record RegisterRequest(
             @NotBlank @Email @Size(max = 320) String email,
@@ -57,5 +62,19 @@ public class AuthController {
     @SecurityRequirements
     public TokenPair login(@Valid @RequestBody LoginRequest request) {
         return auth.login(request.email(), request.password());
+    }
+
+    @PostMapping("/refresh")
+    @Operation(summary = "Rotate a refresh token: returns a new pair and retires the old refresh token")
+    @SecurityRequirements
+    public TokenPair refresh(@Valid @RequestBody RefreshRequest request) {
+        return auth.refresh(request.refreshToken());
+    }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "End the caller's session: its refresh tokens stop working")
+    public void logout() {
+        auth.logout(CurrentUser.sessionFamily());
     }
 }
