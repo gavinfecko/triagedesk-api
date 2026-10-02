@@ -11,7 +11,8 @@ export
 .PHONY: help up down nuke run test verify fmt seed
 help:       ## show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
-up:         ## start PostgreSQL + Mailpit (starts Colima first if needed)
+up:         ## start PostgreSQL + Mailpit (starts Colima first if needed; creates .env from .env.example)
+	@[ -f .env ] || cp .env.example .env
 	@colima status >/dev/null 2>&1 || colima start
 	docker compose up -d --wait
 down:       ## stop the containers, keep the data volume

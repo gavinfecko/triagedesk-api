@@ -56,6 +56,10 @@ springdoc:
 
 triagedesk:
   version: "@project.version@"
+  jwt:
+    issuer: triagedesk
+    access-token-ttl: 15m
+    refresh-token-ttl: 7d
   docs:
     public: false   # dev turns this on; in prod the docs are for admins
 
