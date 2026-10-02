@@ -49,6 +49,18 @@ class OpenApiSpecTest {
     }
 
     @Test
+    void schemaPropertiesAreSnakeCaseLikeTheWireFormat() {
+        MvcTestResult result = mvc.get().uri("/v3/api-docs").exchange();
+        assertThat(result).hasStatusOk();
+        assertThat(result)
+                .bodyJson()
+                .extractingPath("$.components.schemas.UserView.properties")
+                .asMap()
+                .containsKeys("display_name", "created_at")
+                .doesNotContainKeys("displayName", "createdAt");
+    }
+
+    @Test
     void problemDetailSchemaAndSecuritySchemesAreDeclared() {
         MvcTestResult result = mvc.get().uri("/v3/api-docs").exchange();
         assertThat(result).hasStatusOk();

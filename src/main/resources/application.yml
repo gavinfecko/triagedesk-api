@@ -8,6 +8,8 @@ spring:
     hikari:
       connection-init-sql: SET TIME ZONE 'UTC'   # the JDBC driver would otherwise send the JVM's zone
       initialization-fail-timeout: 10000         # tolerate a database that is a few seconds behind us
+  jackson:
+    property-naming-strategy: SNAKE_CASE   # API JSON is snake_case (ARCHITECTURE.md §7)
   jpa:
     open-in-view: false
     hibernate:
