@@ -23,6 +23,9 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    /** Endpoints an anonymous caller may POST to. */
+    static final String[] PUBLIC_POSTS = {"/api/v1/auth/register"};
+
     static final String[] DOCS_PATHS = {
         "/v3/api-docs", "/v3/api-docs/**", "/v3/api-docs.yaml", "/swagger-ui.html", "/swagger-ui/**"
     };
@@ -43,6 +46,7 @@ public class SecurityConfig {
                     auth.requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**")
                             .permitAll();
                     auth.requestMatchers("/actuator/**").hasRole("ADMIN");
+                    auth.requestMatchers(HttpMethod.POST, PUBLIC_POSTS).permitAll();
                     var docs = auth.requestMatchers(HttpMethod.GET, DOCS_PATHS);
                     if (docsPublic) {
                         docs.permitAll();

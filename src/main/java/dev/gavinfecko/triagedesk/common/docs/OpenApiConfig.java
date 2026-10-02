@@ -1,5 +1,8 @@
 package dev.gavinfecko.triagedesk.common.docs;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import io.swagger.v3.core.jackson.ModelResolver;
+import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -78,6 +81,15 @@ public class OpenApiConfig {
                                         .bearerFormat("JWT")))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .addSecurityItem(new SecurityRequirement().addList("basicAuth"));
+    }
+
+    /**
+     * Documents schemas in snake_case to match the wire format. swagger-core introspects models with
+     * its own (Jackson 2) mapper, which does not see {@code spring.jackson.property-naming-strategy}.
+     */
+    @Bean
+    ModelResolver snakeCaseModelResolver() {
+        return new ModelResolver(Json.mapper().copy().setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE));
     }
 
     /**

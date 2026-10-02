@@ -42,7 +42,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         List<FieldProblem> errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(f -> new FieldProblem(f.getField(), String.valueOf(f.getDefaultMessage())))
+                .map(f -> new FieldProblem(jsonName(f.getField()), String.valueOf(f.getDefaultMessage())))
                 .toList();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
@@ -54,8 +54,8 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
             HandlerMethodValidationException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         List<FieldProblem> errors = ex.getParameterValidationResults().stream()
                 .flatMap(result -> result.getResolvableErrors().stream()
-                        .map(error ->
-                                new FieldProblem(parameterName(result), String.valueOf(error.getDefaultMessage()))))
+                        .map(error -> new FieldProblem(
+                                jsonName(parameterName(result)), String.valueOf(error.getDefaultMessage()))))
                 .toList();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
@@ -70,7 +70,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     ProblemDetail constraintViolation(ConstraintViolationException ex) {
         List<FieldProblem> errors = ex.getConstraintViolations().stream()
-                .map(v -> new FieldProblem(lastNode(v), v.getMessage()))
+                .map(v -> new FieldProblem(jsonName(lastNode(v)), v.getMessage()))
                 .toList();
         return validationProblem(errors);
     }
@@ -78,6 +78,11 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(NotFoundException.class)
     ProblemDetail notFound(NotFoundException ex) {
         return problem(HttpStatus.NOT_FOUND, "not-found", "Not found", ex.getMessage());
+    }
+
+    @ExceptionHandler(ApiException.class)
+    ProblemDetail api(ApiException ex) {
+        return problem(ex.status(), ex.slug(), ex.title(), ex.getMessage());
     }
 
     @ExceptionHandler(DomainRuleException.class)
@@ -158,6 +163,11 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     private static String titleFor(String slug) {
         String words = slug.replace('-', ' ');
         return Character.toUpperCase(words.charAt(0)) + words.substring(1);
+    }
+
+    /** Java property names are camelCase; the API's JSON is snake_case, so errors name fields the client's way. */
+    static String jsonName(String javaName) {
+        return javaName.replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase(java.util.Locale.ROOT);
     }
 
     private static String lastNode(ConstraintViolation<?> violation) {
