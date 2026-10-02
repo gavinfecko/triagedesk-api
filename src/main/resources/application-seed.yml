@@ -1,0 +1,7 @@
+# `make seed`: load the demo data into the dev database and exit (no web server).
+spring:
+  main:
+    web-application-type: none
+triagedesk:
+  seed:
+    enabled: true
