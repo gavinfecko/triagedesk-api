@@ -11,6 +11,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -46,6 +47,10 @@ class AuthorizationMatrixTest {
     static Stream<Endpoint> endpoints() {
         return Stream.of(
                 new Endpoint(HttpMethod.GET, "/api/v1/users/me", null, ANY),
+                new Endpoint(HttpMethod.GET, "/api/v1/users", null, ADMIN),
+                new Endpoint(HttpMethod.POST, "/api/v1/users", "{}", ADMIN),
+                new Endpoint(HttpMethod.PATCH, "/api/v1/users/" + UUID.randomUUID(), "{}", ADMIN),
+                new Endpoint(HttpMethod.POST, "/api/v1/users/" + UUID.randomUUID() + "/deactivate", null, ADMIN),
                 new Endpoint(HttpMethod.POST, "/api/v1/auth/logout", null, ANY),
                 new Endpoint(HttpMethod.GET, "/actuator/info", null, ADMIN),
                 new Endpoint(HttpMethod.GET, "/actuator/metrics", null, ADMIN),

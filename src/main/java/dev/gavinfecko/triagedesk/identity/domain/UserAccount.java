@@ -35,6 +35,9 @@ public class UserAccount {
     @Column(nullable = false)
     private boolean active;
 
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -56,6 +59,29 @@ public class UserAccount {
 
     public static UserAccount create(String email, String displayName, String passwordHash, Role role, Instant now) {
         return new UserAccount(UUID.randomUUID(), email, displayName, passwordHash, role, now);
+    }
+
+    /** An account an admin creates: any role, with a temporary password the user should replace. */
+    public static UserAccount createWithTemporaryPassword(
+            String email, String displayName, String passwordHash, Role role, Instant now) {
+        UserAccount user = new UserAccount(UUID.randomUUID(), email, displayName, passwordHash, role, now);
+        user.mustChangePassword = true;
+        return user;
+    }
+
+    public void rename(String newName, Instant now) {
+        this.displayName = newName.strip();
+        this.updatedAt = now;
+    }
+
+    public void changeRole(Role newRole, Instant now) {
+        this.role = newRole;
+        this.updatedAt = now;
+    }
+
+    public void deactivate(Instant now) {
+        this.active = false;
+        this.updatedAt = now;
     }
 
     public static String normalizeEmail(String email) {
@@ -84,6 +110,10 @@ public class UserAccount {
 
     public boolean active() {
         return active;
+    }
+
+    public boolean mustChangePassword() {
+        return mustChangePassword;
     }
 
     public Instant createdAt() {
