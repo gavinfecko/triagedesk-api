@@ -1098,6 +1098,66 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
+  /api/v1/tickets/{key}/audit:
+    get:
+      tags:
+      - Tickets
+      summary: "Who changed what on this ticket, and when, oldest first"
+      description: "Staff see every change. Requesters see creation, status, assignee,\
+        \ wording, priority, category and public replies; internal notes and routing\
+        \ stay internal."
+      operationId: trail
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditEntry"
+        "400":
+          description: Validation failed or the request is malformed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "403":
+          description: The caller's role does not allow this
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: The resource does not exist or is not visible to the caller
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: A business rule refused the request (see the type slug)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: Unexpected error; quote the correlation id
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
   /api/v1/queues:
     get:
       tags:
@@ -1563,6 +1623,85 @@ components:
         updated_at:
           type: string
           format: date-time
+    AuditEntry:
+      properties:
+        id:
+          type: integer
+          format: int64
+        action:
+          type: string
+        actor:
+          $ref: "#/components/schemas/Person"
+        field:
+          type: string
+        before:
+          $ref: "#/components/schemas/JsonNode"
+        after:
+          $ref: "#/components/schemas/JsonNode"
+        created_at:
+          type: string
+          format: date-time
+    JsonNode:
+      properties:
+        node_type:
+          type: string
+          enum:
+          - ARRAY
+          - BINARY
+          - BOOLEAN
+          - MISSING
+          - "NULL"
+          - NUMBER
+          - OBJECT
+          - POJO
+          - STRING
+        string:
+          type: boolean
+        integral_number:
+          type: boolean
+        missing_node:
+          type: boolean
+        value_node:
+          type: boolean
+        object:
+          type: boolean
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        floating_point_number:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        double:
+          type: boolean
+        big_decimal:
+          type: boolean
+        big_integer:
+          type: boolean
+        textual:
+          type: boolean
+          deprecated: true
+        boolean:
+          type: boolean
+        binary:
+          type: boolean
+        container:
+          type: boolean
+        "null":
+          type: boolean
+        float:
+          type: boolean
+        array:
+          type: boolean
+        empty:
+          type: boolean
+        embedded_value:
+          type: boolean
     CategoryView:
       properties:
         id:
