@@ -921,19 +921,28 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
-  /api/v1/users/me:
+  /api/v1/tickets/{key}:
     get:
       tags:
-      - Users
-      summary: The calling user
-      operationId: me
+      - Tickets
+      summary: One ticket by its key (HD-001234); someone else's ticket is a 404 for
+        requesters
+      description: The response carries an ETag; send it back as If-Match when you
+        PATCH.
+      operationId: get
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserView"
+                $ref: "#/components/schemas/TicketView"
         "400":
           description: Validation failed or the request is malformed
           content:
@@ -970,19 +979,31 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
-  /api/v1/tickets/{key}:
-    get:
+    patch:
       tags:
       - Tickets
-      summary: One ticket by its key (HD-001234); someone else's ticket is a 404 for
-        requesters
-      operationId: get
+      summary: Reword a ticket's title or description
+      description: "Requires If-Match with the ETag you last read: missing is 428,\
+        \ stale is 412. Staff may edit any open ticket; a requester may edit their\
+        \ own ticket only while it is NEW. Priority and category: TD-25."
+      operationId: update_1
       parameters:
       - name: key
         in: path
         required: true
         schema:
           type: string
+      - name: If-Match
+        in: header
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditTicketRequest"
+        required: true
       responses:
         "200":
           description: OK
@@ -990,6 +1011,55 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TicketView"
+        "400":
+          description: Validation failed or the request is malformed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "403":
+          description: The caller's role does not allow this
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: The resource does not exist or is not visible to the caller
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: A business rule refused the request (see the type slug)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: Unexpected error; quote the correlation id
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+  /api/v1/users/me:
+    get:
+      tags:
+      - Users
+      summary: The calling user
+      operationId: me
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserView"
         "400":
           description: Validation failed or the request is malformed
           content:
@@ -1273,6 +1343,9 @@ components:
         closed_at:
           type: string
           format: date-time
+        version:
+          type: integer
+          format: int64
         warnings:
           type: array
           items:
@@ -1396,6 +1469,16 @@ components:
           - ADMIN
           - AGENT
           - REQUESTER
+    EditTicketRequest:
+      properties:
+        title:
+          type: string
+          maxLength: 120
+          minLength: 5
+        description:
+          type: string
+          maxLength: 5000
+          minLength: 0
     PageMeta:
       properties:
         number:

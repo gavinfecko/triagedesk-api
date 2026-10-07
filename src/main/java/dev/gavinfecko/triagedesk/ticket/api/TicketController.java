@@ -1,8 +1,11 @@
 package dev.gavinfecko.triagedesk.ticket.api;
 
+import dev.gavinfecko.triagedesk.common.errors.InvalidFieldException;
 import dev.gavinfecko.triagedesk.common.web.PageResponse;
+import dev.gavinfecko.triagedesk.common.web.Preconditions;
 import dev.gavinfecko.triagedesk.ticket.application.TicketService;
 import dev.gavinfecko.triagedesk.ticket.application.TicketService.NewTicket;
+import dev.gavinfecko.triagedesk.ticket.application.TicketService.TicketEdits;
 import dev.gavinfecko.triagedesk.ticket.application.TicketSummary;
 import dev.gavinfecko.triagedesk.ticket.application.TicketView;
 import dev.gavinfecko.triagedesk.ticket.domain.Priority;
@@ -16,11 +19,14 @@ import jakarta.validation.constraints.Size;
 import java.net.URI;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -103,8 +109,33 @@ public class TicketController {
     }
 
     @GetMapping("/{key}")
-    @Operation(summary = "One ticket by its key (HD-001234); someone else's ticket is a 404 for requesters")
-    public TicketView get(@PathVariable String key) {
-        return tickets.get(key);
+    @Operation(
+            summary = "One ticket by its key (HD-001234); someone else's ticket is a 404 for requesters",
+            description = "The response carries an ETag; send it back as If-Match when you PATCH.")
+    public ResponseEntity<TicketView> get(@PathVariable String key) {
+        TicketView view = tickets.get(key);
+        return ResponseEntity.ok().eTag(Preconditions.etag(view.version())).body(view);
+    }
+
+    public record EditTicketRequest(
+            @Nullable @Size(min = 5, max = 120) String title,
+            @Nullable @Size(max = 5000) String description) {}
+
+    @PatchMapping("/{key}")
+    @Operation(
+            summary = "Reword a ticket's title or description",
+            description =
+                    "Requires If-Match with the ETag you last read: missing is 428, stale is 412. Staff may edit any open "
+                            + "ticket; a requester may edit their own ticket only while it is NEW. Priority and category: TD-25.")
+    public ResponseEntity<TicketView> update(
+            @PathVariable String key,
+            @RequestHeader(value = HttpHeaders.IF_MATCH, required = false) @Nullable String ifMatch,
+            @Valid @RequestBody EditTicketRequest request) {
+        if (request.title() == null && request.description() == null) {
+            throw new InvalidFieldException("title", "send title and/or description");
+        }
+        TicketView view = tickets.update(
+                key, new TicketEdits(request.title(), request.description()), Preconditions.expectedVersion(ifMatch));
+        return ResponseEntity.ok().eTag(Preconditions.etag(view.version())).body(view);
     }
 }

@@ -121,6 +121,23 @@ public class Ticket {
         updatedAt = now;
     }
 
+    /** Rewords the ticket. Returns true if anything actually changed. */
+    public boolean edit(@Nullable String newTitle, @Nullable String newDescription, Instant now) {
+        boolean changed = false;
+        if (newTitle != null && !newTitle.strip().equals(title)) {
+            title = newTitle.strip();
+            changed = true;
+        }
+        if (newDescription != null && !newDescription.strip().equals(description)) {
+            description = newDescription.strip();
+            changed = true;
+        }
+        if (changed) {
+            updatedAt = now;
+        }
+        return changed;
+    }
+
     public void assign(@Nullable UUID assignee, Instant now) {
         this.assigneeId = assignee;
         this.updatedAt = now;
