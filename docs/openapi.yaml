@@ -342,8 +342,8 @@ paths:
       description: "NEW→OPEN (staff), OPEN→PENDING (staff, comment required), PENDING→\
         OPEN (anyone), OPEN|PENDING→RESOLVED (staff, comment required), RESOLVED→\
         CLOSED (requester or admin), RESOLVED→OPEN (anyone), NEW→CANCELLED (requester\
-        \ or admin), OPEN|PENDING→CANCELLED (admin). Anything else is 409 ticket-state-conflict.\
-        \ A comment is stored as a public reply."
+        \ or admin), OPEN|PENDING→CANCELLED (admin, comment required). Anything else\
+        \ is 409 ticket-state-conflict. A comment is stored as a public reply."
       operationId: transition
       parameters:
       - name: key

@@ -53,7 +53,7 @@ class TicketStatusTest {
     }
 
     @Test
-    void commentsAreRequiredExactlyForPendingAndResolved() {
+    void commentsAreRequiredForPendingResolvedAndAdminCancellations() {
         assertThat(TicketStatus.OPEN.transitionTo(TicketStatus.PENDING))
                 .get()
                 .extracting(t -> t.commentRequired())
@@ -66,6 +66,18 @@ class TicketStatusTest {
                 .get()
                 .extracting(t -> t.commentRequired())
                 .isEqualTo(true);
+        assertThat(TicketStatus.OPEN.transitionTo(TicketStatus.CANCELLED))
+                .get()
+                .extracting(t -> t.commentRequired())
+                .isEqualTo(true);
+        assertThat(TicketStatus.PENDING.transitionTo(TicketStatus.CANCELLED))
+                .get()
+                .extracting(t -> t.commentRequired())
+                .isEqualTo(true);
+        assertThat(TicketStatus.NEW.transitionTo(TicketStatus.CANCELLED))
+                .get()
+                .extracting(t -> t.commentRequired())
+                .isEqualTo(false);
         assertThat(TicketStatus.NEW.transitionTo(TicketStatus.OPEN))
                 .get()
                 .extracting(t -> t.commentRequired())
