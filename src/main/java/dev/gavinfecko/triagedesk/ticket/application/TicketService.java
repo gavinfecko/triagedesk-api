@@ -17,6 +17,7 @@ import dev.gavinfecko.triagedesk.ticket.domain.Queue;
 import dev.gavinfecko.triagedesk.ticket.domain.Ticket;
 import dev.gavinfecko.triagedesk.ticket.domain.TicketAssigned;
 import dev.gavinfecko.triagedesk.ticket.domain.TicketCreated;
+import dev.gavinfecko.triagedesk.ticket.domain.TicketPriorityChanged;
 import dev.gavinfecko.triagedesk.ticket.domain.TicketStateConflict;
 import dev.gavinfecko.triagedesk.ticket.domain.TicketStatus;
 import dev.gavinfecko.triagedesk.ticket.domain.TicketStatusChanged;
@@ -219,11 +220,19 @@ public class TicketService {
     }
 
     public record TicketEdits(
-            @Nullable String title, @Nullable String description) {}
+            @Nullable String title,
+            @Nullable String description,
+            @Nullable Priority priority,
+            @Nullable UUID categoryId) {
+        boolean touchesStaffFields() {
+            return priority != null || categoryId != null;
+        }
+    }
 
     /**
-     * Rewords a ticket, guarded by the version the caller last read. Staff may edit any open ticket;
-     * a requester may edit their own ticket only while it is NEW (nobody has started on it yet).
+     * Edits a ticket, guarded by the version the caller last read. Staff may reword, re-prioritise and
+     * re-categorise any open ticket; a requester may reword their own ticket only while it is NEW, and
+     * never touch priority or category.
      */
     @Transactional
     public TicketView update(String key, TicketEdits edits, long expectedVersion) {
@@ -235,12 +244,43 @@ public class TicketService {
         if (!actor.isStaff() && ticket.status() != TicketStatus.NEW) {
             throw new AccessDeniedException("Requesters can edit a ticket only while it is NEW");
         }
+        if (!actor.isStaff() && edits.touchesStaffFields()) {
+            throw new AccessDeniedException("Only agents and admins change priority or category");
+        }
+        Category newCategory = edits.categoryId() == null
+                ? null
+                : categories
+                        .findById(edits.categoryId())
+                        .orElseThrow(() -> new InvalidFieldException("category_id", "no such category"));
         if (ticket.version() != expectedVersion) {
             throw Preconditions.stale();
         }
+        Instant now = clock.instant();
+        boolean changed = false;
+        if (edits.priority() != null && edits.priority() != ticket.priority()) {
+            Priority before = ticket.priority();
+            ticket.changePriority(edits.priority(), now);
+            audit.record(AuditEvent.of("ticket.priority_changed")
+                    .actor(actor.id())
+                    .ticket(ticket.id())
+                    .change("priority", before, ticket.priority()));
+            events.publishEvent(
+                    new TicketPriorityChanged(ticket.id(), ticket.key(), before, ticket.priority(), actor.id(), now));
+            changed = true;
+        }
+        if (newCategory != null && !newCategory.id().equals(ticket.categoryId())) {
+            UUID before = ticket.categoryId();
+            ticket.recategorize(newCategory.id(), now);
+            audit.record(AuditEvent.of("ticket.category_changed")
+                    .actor(actor.id())
+                    .ticket(ticket.id())
+                    .change("category_id", before, newCategory.id()));
+            changed = true;
+        }
         String titleBefore = ticket.title();
         String descriptionBefore = ticket.description();
-        if (ticket.edit(edits.title(), edits.description(), clock.instant())) {
+        if (ticket.edit(edits.title(), edits.description(), now)) {
+            changed = true;
             if (!titleBefore.equals(ticket.title())) {
                 audit.record(AuditEvent.of("ticket.edited")
                         .actor(actor.id())
@@ -253,6 +293,8 @@ public class TicketService {
                         .ticket(ticket.id())
                         .change("description", descriptionBefore, ticket.description()));
             }
+        }
+        if (changed) {
             tickets.flush(); // bumps the version now, so the response carries the new ETag
         }
         return view(ticket, List.of());
