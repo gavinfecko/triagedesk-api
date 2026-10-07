@@ -138,6 +138,17 @@ public class Ticket {
         return changed;
     }
 
+    public void changePriority(Priority newPriority, Instant now) {
+        this.priority = newPriority;
+        this.updatedAt = now;
+    }
+
+    /** The category is corrected; the queue is not moved automatically (that is an explicit action, TD-24). */
+    public void recategorize(UUID newCategory, Instant now) {
+        this.categoryId = newCategory;
+        this.updatedAt = now;
+    }
+
     public void assign(@Nullable UUID assignee, Instant now) {
         this.assigneeId = assignee;
         this.updatedAt = now;

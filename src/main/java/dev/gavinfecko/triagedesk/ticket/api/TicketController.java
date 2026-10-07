@@ -119,23 +119,32 @@ public class TicketController {
 
     public record EditTicketRequest(
             @Nullable @Size(min = 5, max = 120) String title,
-            @Nullable @Size(max = 5000) String description) {}
+            @Nullable @Size(max = 5000) String description,
+            @Nullable Priority priority,
+            @Nullable UUID categoryId) {
+        boolean isEmpty() {
+            return title == null && description == null && priority == null && categoryId == null;
+        }
+    }
 
     @PatchMapping("/{key}")
     @Operation(
-            summary = "Reword a ticket's title or description",
+            summary = "Edit a ticket: title, description, priority, category",
             description =
                     "Requires If-Match with the ETag you last read: missing is 428, stale is 412. Staff may edit any open "
-                            + "ticket; a requester may edit their own ticket only while it is NEW. Priority and category: TD-25.")
+                            + "ticket; a requester may change the title and description of their own ticket only while it is NEW, "
+                            + "and never the priority or category. Changing the category does not move the queue (see /queue).")
     public ResponseEntity<TicketView> update(
             @PathVariable String key,
             @RequestHeader(value = HttpHeaders.IF_MATCH, required = false) @Nullable String ifMatch,
             @Valid @RequestBody EditTicketRequest request) {
-        if (request.title() == null && request.description() == null) {
-            throw new InvalidFieldException("title", "send title and/or description");
+        if (request.isEmpty()) {
+            throw new InvalidFieldException("title", "send at least one of title, description, priority, category_id");
         }
         TicketView view = tickets.update(
-                key, new TicketEdits(request.title(), request.description()), Preconditions.expectedVersion(ifMatch));
+                key,
+                new TicketEdits(request.title(), request.description(), request.priority(), request.categoryId()),
+                Preconditions.expectedVersion(ifMatch));
         return ResponseEntity.ok().eTag(Preconditions.etag(view.version())).body(view);
     }
 }

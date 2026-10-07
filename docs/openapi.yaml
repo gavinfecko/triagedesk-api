@@ -982,10 +982,12 @@ paths:
     patch:
       tags:
       - Tickets
-      summary: Reword a ticket's title or description
+      summary: "Edit a ticket: title, description, priority, category"
       description: "Requires If-Match with the ETag you last read: missing is 428,\
-        \ stale is 412. Staff may edit any open ticket; a requester may edit their\
-        \ own ticket only while it is NEW. Priority and category: TD-25."
+        \ stale is 412. Staff may edit any open ticket; a requester may change the\
+        \ title and description of their own ticket only while it is NEW, and never\
+        \ the priority or category. Changing the category does not move the queue\
+        \ (see /queue)."
       operationId: update_1
       parameters:
       - name: key
@@ -1479,6 +1481,16 @@ components:
           type: string
           maxLength: 5000
           minLength: 0
+        priority:
+          type: string
+          enum:
+          - P1_CRITICAL
+          - P2_HIGH
+          - P3_MEDIUM
+          - P4_LOW
+        category_id:
+          type: string
+          format: uuid
     PageMeta:
       properties:
         number:
