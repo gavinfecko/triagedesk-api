@@ -2,6 +2,7 @@ package dev.gavinfecko.triagedesk.ticket.application;
 
 import dev.gavinfecko.triagedesk.common.audit.AuditEvent;
 import dev.gavinfecko.triagedesk.common.audit.AuditLog;
+import dev.gavinfecko.triagedesk.common.errors.ApiException;
 import dev.gavinfecko.triagedesk.common.errors.InvalidFieldException;
 import dev.gavinfecko.triagedesk.common.errors.NotFoundException;
 import dev.gavinfecko.triagedesk.common.security.CurrentUser;
@@ -13,6 +14,7 @@ import dev.gavinfecko.triagedesk.ticket.domain.Category;
 import dev.gavinfecko.triagedesk.ticket.domain.Priority;
 import dev.gavinfecko.triagedesk.ticket.domain.Queue;
 import dev.gavinfecko.triagedesk.ticket.domain.Ticket;
+import dev.gavinfecko.triagedesk.ticket.domain.TicketAssigned;
 import dev.gavinfecko.triagedesk.ticket.domain.TicketCreated;
 import dev.gavinfecko.triagedesk.ticket.domain.TicketStateConflict;
 import dev.gavinfecko.triagedesk.ticket.domain.TicketStatus;
@@ -37,6 +39,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -165,6 +169,92 @@ public class TicketService {
             comments.write(ticket, actor, Visibility.PUBLIC, comment, now);
         }
         return view(ticket, List.of());
+    }
+
+    /**
+     * Assigns a ticket: {@code "me"}, another active agent or admin, or {@code null} to unassign.
+     * Taking a NEW ticket opens it, which also counts as the first response.
+     */
+    @Transactional
+    public TicketView assign(String key, @Nullable String assignee) {
+        CurrentUser actor = requireStaff();
+        Ticket ticket = workable(key, actor);
+        UUID to = resolveAssignee(assignee, actor);
+        UUID from = ticket.assigneeId();
+        Instant now = clock.instant();
+        ticket.assign(to, now);
+        audit.record(AuditEvent.of("ticket.assigned")
+                .actor(actor.id())
+                .ticket(ticket.id())
+                .change("assignee_id", from, to));
+        events.publishEvent(new TicketAssigned(ticket.id(), ticket.key(), from, to, actor.id(), now));
+        if (to != null && ticket.status() == TicketStatus.NEW) {
+            ticket.transitionTo(TicketStatus.OPEN, now);
+            audit.record(AuditEvent.of("ticket.status_changed")
+                    .actor(actor.id())
+                    .ticket(ticket.id())
+                    .change("status", TicketStatus.NEW, TicketStatus.OPEN));
+            events.publishEvent(new TicketStatusChanged(
+                    ticket.id(), ticket.key(), TicketStatus.NEW, TicketStatus.OPEN, actor.id(), now));
+        }
+        return view(ticket, List.of());
+    }
+
+    @Transactional
+    public TicketView moveToQueue(String key, UUID queueId) {
+        CurrentUser actor = requireStaff();
+        Ticket ticket = workable(key, actor);
+        Queue queue =
+                queues.findById(queueId).orElseThrow(() -> new InvalidFieldException("queue_id", "no such queue"));
+        UUID from = ticket.queueId();
+        if (!from.equals(queue.id())) {
+            ticket.moveToQueue(queue.id(), clock.instant());
+            audit.record(AuditEvent.of("ticket.queue_changed")
+                    .actor(actor.id())
+                    .ticket(ticket.id())
+                    .change("queue_id", from, queue.id()));
+        }
+        return view(ticket, List.of());
+    }
+
+    private @Nullable UUID resolveAssignee(@Nullable String assignee, CurrentUser actor) {
+        if (assignee == null) {
+            return null;
+        }
+        if (assignee.equals("me")) {
+            return actor.id();
+        }
+        UUID id;
+        try {
+            id = UUID.fromString(assignee);
+        } catch (IllegalArgumentException notAUuid) {
+            throw new InvalidFieldException("assignee_id", "must be \"me\", a user id, or null");
+        }
+        if (!people.isActiveStaff(id)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "invalid-assignee",
+                    "Invalid assignee",
+                    "Tickets can only be assigned to an active agent or admin");
+        }
+        return id;
+    }
+
+    private static CurrentUser requireStaff() {
+        CurrentUser actor = CurrentUser.get();
+        if (!actor.isStaff()) {
+            throw new AccessDeniedException("Only agents and admins work tickets");
+        }
+        return actor;
+    }
+
+    /** A staff member's ticket to work on: must exist and must not be closed or cancelled. */
+    private Ticket workable(String key, CurrentUser actor) {
+        Ticket ticket = visibleTicket(key, actor);
+        if (ticket.status().isTerminal()) {
+            throw new TicketStateConflict(key, ticket.status(), "it is closed to further changes");
+        }
+        return ticket;
     }
 
     private Ticket visibleTicket(String key, CurrentUser actor) {

@@ -43,6 +43,7 @@ class AuthorizationMatrixTest {
 
     static final Set<Role> ANY = EnumSet.allOf(Role.class);
     static final Set<Role> ADMIN = EnumSet.of(Role.ADMIN);
+    static final Set<Role> STAFF = EnumSet.of(Role.ADMIN, Role.AGENT);
 
     static Stream<Endpoint> endpoints() {
         return Stream.of(
@@ -58,6 +59,8 @@ class AuthorizationMatrixTest {
                 new Endpoint(HttpMethod.GET, "/api/v1/tickets/HD-999999/comments", null, ANY),
                 new Endpoint(HttpMethod.POST, "/api/v1/tickets/HD-999999/comments", "{}", ANY),
                 new Endpoint(HttpMethod.POST, "/api/v1/tickets/HD-999999/transitions", "{}", ANY),
+                new Endpoint(HttpMethod.POST, "/api/v1/tickets/HD-999999/assign", "{}", STAFF),
+                new Endpoint(HttpMethod.POST, "/api/v1/tickets/HD-999999/queue", "{}", STAFF),
                 new Endpoint(HttpMethod.GET, "/api/v1/categories", null, ANY),
                 new Endpoint(HttpMethod.GET, "/api/v1/queues", null, ANY),
                 new Endpoint(HttpMethod.GET, "/actuator/info", null, ADMIN),

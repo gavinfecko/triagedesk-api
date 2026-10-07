@@ -121,6 +121,16 @@ public class Ticket {
         updatedAt = now;
     }
 
+    public void assign(@Nullable UUID assignee, Instant now) {
+        this.assigneeId = assignee;
+        this.updatedAt = now;
+    }
+
+    public void moveToQueue(UUID queue, Instant now) {
+        this.queueId = queue;
+        this.updatedAt = now;
+    }
+
     /** Staff's first public reply. Idempotent; status is untouched (assignment opens a NEW ticket, TD-24). */
     public boolean recordFirstResponse(Instant now) {
         if (firstRespondedAt != null) {
