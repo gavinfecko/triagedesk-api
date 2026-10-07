@@ -648,6 +648,31 @@ Angular 22 standalone app, signals, Angular Material, `openapi-generator` (`type
 
 ---
 
+### TD-113: Change your own password
+**Epic** E1 · **Points** 2 · **Priority** P2 · **Sprint** 3 · **Area** identity
+
+As any user
+I want to change my password, and be required to when an admin gave me a temporary one
+So that only I know my password
+
+**Acceptance criteria**
+- Given my current password and a new one (12+ characters, not breached, different from the current), when I `POST /api/v1/users/me/password`, then `204`, the hash changes, `must_change_password` becomes false, every other session family of mine is revoked, and `user.password_changed` is audited.
+- Given a wrong current password, then `401 /problems/invalid-credentials`, and nothing changes.
+- Given `must_change_password` is true, when I call any endpoint other than `/users/me`, `/users/me/password`, `/auth/logout` and `/auth/refresh`, then `403 /problems/password-change-required`.
+
+_Raised at the Sprint 1 retro._
+
+### TD-114: Scripted demo smoke test on release tags
+**Epic** E7 · **Points** 2 · **Priority** P2 · **Sprint** 3 · **Area** platform · **Type** task
+
+**Acceptance criteria**
+- Given `scripts/demo-smoke.sh`, when it runs against a fresh `docker compose` stack with the `dev` profile, then it logs in as each demo role and checks the Sprint 1 demo path (own-ticket scoping, 404 for another requester's ticket, 403 for agents on user admin, ticket creation with a warning) and exits non-zero on any mismatch.
+- Given a `v*` tag, then CI runs the script against the built image before publishing the release.
+
+_Raised at the Sprint 1 retro: running the real demo found a bug the test suite could not._
+
+---
+
 ## Icebox (named so they stay out of v1)
 
 ### TD-100: File attachments on tickets and comments
