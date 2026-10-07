@@ -96,6 +96,27 @@ public class Ticket {
         return ticket;
     }
 
+    /** Staff's first public reply. Idempotent; status is untouched (assignment opens a NEW ticket, TD-24). */
+    public boolean recordFirstResponse(Instant now) {
+        if (firstRespondedAt != null) {
+            return false;
+        }
+        firstRespondedAt = now;
+        updatedAt = now;
+        return true;
+    }
+
+    /** A requester's reply ends the wait: PENDING goes back to OPEN. Returns the previous status, or null if nothing changed. */
+    public @Nullable TicketStatus returnToOpenIfPending(Instant now) {
+        if (status != TicketStatus.PENDING) {
+            return null;
+        }
+        TicketStatus before = status;
+        status = TicketStatus.OPEN;
+        updatedAt = now;
+        return before;
+    }
+
     public UUID id() {
         return id;
     }
