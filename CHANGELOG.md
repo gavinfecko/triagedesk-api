@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-10-07
+Sprint 2: agents can work tickets end to end, with a full audit trail.
+
+### Added
+- Public replies and internal notes on a ticket; staff's first reply records the first response; a requester's reply returns a PENDING ticket to OPEN (TD-30).
+- The status state machine as a transition table with `POST /tickets/{key}/transitions`; PENDING and RESOLVED require a comment stored as a public reply; CLOSED and CANCELLED are terminal (TD-23).
+- Assign, reassign, unassign and move between queues; taking a NEW ticket opens it (TD-24).
+- `ETag` on reads and `If-Match` on edits (428 missing, 412 stale); a lost write race also answers 412 (TD-26).
+- `PATCH /tickets/{key}` for title, description, priority and category; requesters may only reword their own NEW ticket (TD-25, TD-26).
+- Requesters confirm a fix (CLOSED) or reopen within 14 days; `reopen_count`; later reopens are refused with a hint (TD-27).
+- Cancellation: requesters while NEW, admins any open ticket with a reason (TD-28).
+- `GET /tickets/{key}/audit`: who changed what and when, with requester-safe filtering; audit rows are append-only in the database; seeded tickets carry a coherent history (TD-31).
+- Ticket list filters (status, priority, queue, category, requester, assignee incl. `me` and `unassigned`), allow-listed sorting, capped paging; requesters stay scoped to their own tickets; index-backed over 10,000 rows (TD-22).
+- Domain events for every ticket change (`TicketStatusChanged`, `TicketAssigned`, `TicketPriorityChanged`, `TicketFirstResponded`, `CommentAdded`) for the SLA engine and notifications.
+
+### Fixed
+- The OpenAPI document described free-form JSON values as Jackson internals in a machine-dependent order; they are now documented as any JSON value.
+
 ## [0.2.0] — 2026-10-02
 Sprint 1: users can register, log in and open a ticket they can read back, with roles enforced and a demo clinic to explore.
 
