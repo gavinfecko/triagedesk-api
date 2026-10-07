@@ -1635,73 +1635,12 @@ components:
         field:
           type: string
         before:
-          $ref: "#/components/schemas/JsonNode"
+          type: object
         after:
-          $ref: "#/components/schemas/JsonNode"
+          type: object
         created_at:
           type: string
           format: date-time
-    JsonNode:
-      properties:
-        node_type:
-          type: string
-          enum:
-          - ARRAY
-          - BINARY
-          - BOOLEAN
-          - MISSING
-          - "NULL"
-          - NUMBER
-          - OBJECT
-          - POJO
-          - STRING
-        string:
-          type: boolean
-        integral_number:
-          type: boolean
-        missing_node:
-          type: boolean
-        value_node:
-          type: boolean
-        object:
-          type: boolean
-        pojo:
-          type: boolean
-        number:
-          type: boolean
-        floating_point_number:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        double:
-          type: boolean
-        big_decimal:
-          type: boolean
-        big_integer:
-          type: boolean
-        textual:
-          type: boolean
-          deprecated: true
-        boolean:
-          type: boolean
-        binary:
-          type: boolean
-        container:
-          type: boolean
-        "null":
-          type: boolean
-        float:
-          type: boolean
-        array:
-          type: boolean
-        empty:
-          type: boolean
-        embedded_value:
-          type: boolean
     CategoryView:
       properties:
         id:
