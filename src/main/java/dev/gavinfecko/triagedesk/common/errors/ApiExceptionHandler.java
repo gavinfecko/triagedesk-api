@@ -1,6 +1,7 @@
 package dev.gavinfecko.triagedesk.common.errors;
 
 import dev.gavinfecko.triagedesk.common.web.CorrelationIdFilter;
+import dev.gavinfecko.triagedesk.common.web.Preconditions;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
@@ -8,6 +9,7 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -73,6 +75,13 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
                 .map(v -> new FieldProblem(jsonName(lastNode(v)), v.getMessage()))
                 .toList();
         return validationProblem(errors);
+    }
+
+    /** Two writers raced past the version check; the loser gets the same answer as a stale If-Match. */
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    ProblemDetail optimisticLock(OptimisticLockingFailureException ex) {
+        ApiException stale = Preconditions.stale();
+        return problem(stale.status(), stale.slug(), stale.title(), stale.getMessage());
     }
 
     @ExceptionHandler(InvalidFieldException.class)

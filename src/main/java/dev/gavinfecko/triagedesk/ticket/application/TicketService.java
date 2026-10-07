@@ -7,6 +7,7 @@ import dev.gavinfecko.triagedesk.common.errors.InvalidFieldException;
 import dev.gavinfecko.triagedesk.common.errors.NotFoundException;
 import dev.gavinfecko.triagedesk.common.security.CurrentUser;
 import dev.gavinfecko.triagedesk.common.web.PageResponse;
+import dev.gavinfecko.triagedesk.common.web.Preconditions;
 import dev.gavinfecko.triagedesk.identity.application.UserDirectory;
 import dev.gavinfecko.triagedesk.ticket.application.TicketView.Person;
 import dev.gavinfecko.triagedesk.ticket.application.TicketView.Ref;
@@ -217,6 +218,46 @@ public class TicketService {
         return view(ticket, List.of());
     }
 
+    public record TicketEdits(
+            @Nullable String title, @Nullable String description) {}
+
+    /**
+     * Rewords a ticket, guarded by the version the caller last read. Staff may edit any open ticket;
+     * a requester may edit their own ticket only while it is NEW (nobody has started on it yet).
+     */
+    @Transactional
+    public TicketView update(String key, TicketEdits edits, long expectedVersion) {
+        CurrentUser actor = CurrentUser.get();
+        Ticket ticket = visibleTicket(key, actor);
+        if (ticket.status().isTerminal()) {
+            throw new TicketStateConflict(key, ticket.status(), "it is closed to further changes");
+        }
+        if (!actor.isStaff() && ticket.status() != TicketStatus.NEW) {
+            throw new AccessDeniedException("Requesters can edit a ticket only while it is NEW");
+        }
+        if (ticket.version() != expectedVersion) {
+            throw Preconditions.stale();
+        }
+        String titleBefore = ticket.title();
+        String descriptionBefore = ticket.description();
+        if (ticket.edit(edits.title(), edits.description(), clock.instant())) {
+            if (!titleBefore.equals(ticket.title())) {
+                audit.record(AuditEvent.of("ticket.edited")
+                        .actor(actor.id())
+                        .ticket(ticket.id())
+                        .change("title", titleBefore, ticket.title()));
+            }
+            if (!descriptionBefore.equals(ticket.description())) {
+                audit.record(AuditEvent.of("ticket.edited")
+                        .actor(actor.id())
+                        .ticket(ticket.id())
+                        .change("description", descriptionBefore, ticket.description()));
+            }
+            tickets.flush(); // bumps the version now, so the response carries the new ETag
+        }
+        return view(ticket, List.of());
+    }
+
     private @Nullable UUID resolveAssignee(@Nullable String assignee, CurrentUser actor) {
         if (assignee == null) {
             return null;
@@ -334,6 +375,7 @@ public class TicketService {
                 ticket.firstRespondedAt(),
                 ticket.resolvedAt(),
                 ticket.closedAt(),
+                ticket.version(),
                 List.copyOf(warnings));
     }
 }
