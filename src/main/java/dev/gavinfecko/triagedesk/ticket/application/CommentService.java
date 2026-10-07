@@ -60,10 +60,14 @@ public class CommentService {
     public CommentView add(String key, Visibility visibility, String body) {
         CurrentUser actor = CurrentUser.get();
         Ticket ticket = visibleTicket(key, actor);
+        return write(ticket, actor, visibility, body, clock.instant());
+    }
+
+    /** Writes a comment on an already-loaded ticket; used by transitions that carry a comment (TD-23). */
+    CommentView write(Ticket ticket, CurrentUser actor, Visibility visibility, String body, Instant now) {
         if (!actor.isStaff() && visibility == Visibility.INTERNAL) {
             throw new AccessDeniedException("Requesters cannot write internal notes");
         }
-        Instant now = clock.instant();
         Comment comment = comments.save(new Comment(ticket.id(), actor.id(), visibility, body, now));
         audit.record(AuditEvent.of("ticket.comment_added")
                 .actor(actor.id())

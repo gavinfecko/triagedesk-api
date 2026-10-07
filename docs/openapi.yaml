@@ -334,6 +334,72 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
+  /api/v1/tickets/{key}/transitions:
+    post:
+      tags:
+      - Tickets
+      summary: Move a ticket to another status
+      description: "NEW→OPEN (staff), OPEN→PENDING (staff, comment required), PENDING→\
+        OPEN (anyone), OPEN|PENDING→RESOLVED (staff, comment required), RESOLVED→\
+        CLOSED (requester or admin), RESOLVED→OPEN (anyone), NEW→CANCELLED (requester\
+        \ or admin), OPEN|PENDING→CANCELLED (admin). Anything else is 409 ticket-state-conflict.\
+        \ A comment is stored as a public reply."
+      operationId: transition
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransitionRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketView"
+        "400":
+          description: Validation failed or the request is malformed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "403":
+          description: The caller's role does not allow this
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: The resource does not exist or is not visible to the caller
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: A business rule refused the request (see the type slug)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: Unexpected error; quote the correlation id
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
   /api/v1/tickets/{key}/comments:
     get:
       tags:
@@ -1087,6 +1153,23 @@ components:
           type: array
           items:
             type: string
+    TransitionRequest:
+      properties:
+        to:
+          type: string
+          enum:
+          - NEW
+          - OPEN
+          - PENDING
+          - RESOLVED
+          - CLOSED
+          - CANCELLED
+        comment:
+          type: string
+          maxLength: 10000
+          minLength: 0
+      required:
+      - to
     NewComment:
       properties:
         body:

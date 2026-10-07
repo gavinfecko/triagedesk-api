@@ -57,6 +57,7 @@ class AuthorizationMatrixTest {
                 new Endpoint(HttpMethod.GET, "/api/v1/tickets/HD-999999", null, ANY),
                 new Endpoint(HttpMethod.GET, "/api/v1/tickets/HD-999999/comments", null, ANY),
                 new Endpoint(HttpMethod.POST, "/api/v1/tickets/HD-999999/comments", "{}", ANY),
+                new Endpoint(HttpMethod.POST, "/api/v1/tickets/HD-999999/transitions", "{}", ANY),
                 new Endpoint(HttpMethod.GET, "/api/v1/categories", null, ANY),
                 new Endpoint(HttpMethod.GET, "/api/v1/queues", null, ANY),
                 new Endpoint(HttpMethod.GET, "/actuator/info", null, ADMIN),
