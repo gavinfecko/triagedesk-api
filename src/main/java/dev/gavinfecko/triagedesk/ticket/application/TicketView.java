@@ -25,6 +25,7 @@ public record TicketView(
         @Nullable Instant firstRespondedAt,
         @Nullable Instant resolvedAt,
         @Nullable Instant closedAt,
+        int reopenCount,
         long version,
         @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> warnings) {
 
