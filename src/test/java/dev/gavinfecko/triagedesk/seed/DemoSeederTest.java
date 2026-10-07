@@ -70,6 +70,15 @@ class DemoSeederTest {
                         select count(*) from tickets t join users u on u.id = t.requester_id
                         where u.email in (:emails) and t.status in ('OPEN', 'PENDING', 'RESOLVED', 'CLOSED') and t.assignee_id is null""").param("emails", emails).query(Integer.class).single();
         assertThat(unassignedButWorked).isZero();
+
+        Integer closedWithoutFullHistory =
+                jdbc.sql("""
+                        select count(*) from tickets t join users u on u.id = t.requester_id
+                        where u.email in (:emails) and t.status = 'CLOSED'
+                          and (select count(*) from audit_events a where a.ticket_id = t.id) < 5""").param("emails", emails).query(Integer.class).single();
+        assertThat(closedWithoutFullHistory)
+                .as("created, assigned, opened, resolved, closed")
+                .isZero();
     }
 
     @Test

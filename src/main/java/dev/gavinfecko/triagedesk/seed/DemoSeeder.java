@@ -141,11 +141,70 @@ public class DemoSeeder implements ApplicationRunner {
                         id)
                 .update();
         if (inserted == 1) {
-            jdbc.sql("""
-                            insert into audit_events (action, actor_id, ticket_id, field, after_value, created_at)
-                            values ('ticket.created', ?, ?, 'status', '"NEW"'::jsonb, ?)""").params(requester.id(), id, Timestamp.from(created)).update();
+            history(id, status, requester.id(), assignee, created, firstResponse, resolved, closed);
         }
         return inserted;
+    }
+
+    /** The audit rows a ticket in this status would have accumulated, in order (TD-31). */
+    private void history(
+            UUID ticket,
+            String status,
+            UUID requester,
+            @Nullable UUID assignee,
+            Instant created,
+            @Nullable Instant firstResponse,
+            @Nullable Instant resolved,
+            @Nullable Instant closed) {
+        auditRow(ticket, "ticket.created", requester, "status", null, "NEW", created);
+        if (status.equals("CANCELLED")) {
+            auditRow(
+                    ticket,
+                    "ticket.status_changed",
+                    requester,
+                    "status",
+                    "NEW",
+                    "CANCELLED",
+                    created.plus(Duration.ofMinutes(5)));
+            return;
+        }
+        if (assignee == null || firstResponse == null) {
+            return;
+        }
+        auditRow(ticket, "ticket.assigned", assignee, "assignee_id", null, assignee.toString(), firstResponse);
+        auditRow(ticket, "ticket.status_changed", assignee, "status", "NEW", "OPEN", firstResponse);
+        if (status.equals("PENDING")) {
+            auditRow(
+                    ticket,
+                    "ticket.status_changed",
+                    assignee,
+                    "status",
+                    "OPEN",
+                    "PENDING",
+                    firstResponse.plus(Duration.ofMinutes(30)));
+        }
+        if (resolved != null) {
+            auditRow(ticket, "ticket.status_changed", assignee, "status", "OPEN", "RESOLVED", resolved);
+        }
+        if (closed != null) {
+            auditRow(ticket, "ticket.status_changed", requester, "status", "RESOLVED", "CLOSED", closed);
+        }
+    }
+
+    private void auditRow(
+            UUID ticket, String action, UUID actor, String field, @Nullable String before, String after, Instant at) {
+        jdbc.sql("""
+                        insert into audit_events (action, actor_id, ticket_id, field, before_value, after_value, created_at)
+                        values (?, ?, ?, ?, cast(? as jsonb), cast(? as jsonb), ?)""")
+                .params(
+                        action,
+                        actor,
+                        ticket,
+                        field,
+                        before == null ? null : "\"" + before + "\"",
+                        "\"" + after + "\"",
+                        Timestamp.from(at))
+                .update();
     }
 
     private static @Nullable Timestamp ts(@Nullable Instant instant) {

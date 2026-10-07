@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.springdoc.core.customizers.OpenApiCustomizer;
+import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,6 +36,12 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class OpenApiConfig {
+
+    static {
+        // A JsonNode field means "any JSON value" (audit before/after); introspecting the class itself
+        // would document Jackson's internals, in an order that differs between machines.
+        SpringDocUtils.getConfig().replaceWithClass(tools.jackson.databind.JsonNode.class, Object.class);
+    }
 
     static final String PROBLEM_SCHEMA = "ProblemDetail";
     static final String PROBLEM_MEDIA_TYPE = "application/problem+json";
