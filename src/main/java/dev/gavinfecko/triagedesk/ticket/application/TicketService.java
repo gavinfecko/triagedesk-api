@@ -14,6 +14,7 @@ import dev.gavinfecko.triagedesk.ticket.application.TicketView.Ref;
 import dev.gavinfecko.triagedesk.ticket.domain.Category;
 import dev.gavinfecko.triagedesk.ticket.domain.Priority;
 import dev.gavinfecko.triagedesk.ticket.domain.Queue;
+import dev.gavinfecko.triagedesk.ticket.domain.ReopenWindowClosed;
 import dev.gavinfecko.triagedesk.ticket.domain.Ticket;
 import dev.gavinfecko.triagedesk.ticket.domain.TicketAssigned;
 import dev.gavinfecko.triagedesk.ticket.domain.TicketCreated;
@@ -161,6 +162,12 @@ public class TicketService {
             throw new InvalidFieldException("comment", "required when moving a ticket to " + to);
         }
         Instant now = clock.instant();
+        if (from == TicketStatus.RESOLVED && to == TicketStatus.OPEN) {
+            Instant resolvedAt = ticket.resolvedAt();
+            if (resolvedAt != null && resolvedAt.plus(ReopenWindowClosed.WINDOW).isBefore(now)) {
+                throw new ReopenWindowClosed(key);
+            }
+        }
         ticket.transitionTo(to, now);
         audit.record(AuditEvent.of("ticket.status_changed")
                 .actor(actor.id())
@@ -417,6 +424,7 @@ public class TicketService {
                 ticket.firstRespondedAt(),
                 ticket.resolvedAt(),
                 ticket.closedAt(),
+                ticket.reopenCount(),
                 ticket.version(),
                 List.copyOf(warnings));
     }

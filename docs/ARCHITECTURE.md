@@ -75,7 +75,7 @@ Inside a module the shape is conventional: `api/` (controller + request/response
 | `PENDING` | `OPEN` | Requester (by replying), Agent, Admin | Timer resumes. |
 | `OPEN` / `PENDING` | `RESOLVED` | Agent, Admin | Resolution note required. Resolution timer stops. `ticket.resolved` |
 | `RESOLVED` | `CLOSED` | Requester (confirm), Admin, or scheduler after 3 business days | `ticket.closed` |
-| `RESOLVED` | `OPEN` | Requester, Agent, Admin | Reopen within 14 days; a fresh resolution timer starts. `ticket.reopened` |
+| `RESOLVED` | `OPEN` | Requester, Agent, Admin | Reopen within 14 days of `resolved_at` (anyone; later it is a new ticket); `reopen_count` increments; a fresh resolution timer starts. `ticket.reopened` |
 | `NEW` / `OPEN` / `PENDING` | `CANCELLED` | Requester (own ticket, only while `NEW`), Admin | Terminal. Timers cancelled. |
 | `CLOSED` / `CANCELLED` | anything | nobody | Terminal. 409 Problem Details `ticket-state-conflict`. |
 

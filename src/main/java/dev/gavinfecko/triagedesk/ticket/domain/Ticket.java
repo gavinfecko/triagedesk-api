@@ -66,6 +66,9 @@ public class Ticket {
     @Column(name = "closed_at")
     private @Nullable Instant closedAt;
 
+    @Column(name = "reopen_count", nullable = false)
+    private int reopenCount;
+
     @Version
     private long version;
 
@@ -109,6 +112,7 @@ public class Ticket {
                 if (status == TicketStatus.RESOLVED) { // reopen: the resolution is withdrawn
                     resolvedAt = null;
                     closedAt = null;
+                    reopenCount++;
                 }
             }
             case RESOLVED -> resolvedAt = now;
@@ -238,6 +242,10 @@ public class Ticket {
 
     public @Nullable Instant closedAt() {
         return closedAt;
+    }
+
+    public int reopenCount() {
+        return reopenCount;
     }
 
     public long version() {
