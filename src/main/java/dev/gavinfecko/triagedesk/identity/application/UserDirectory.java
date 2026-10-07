@@ -1,5 +1,6 @@
 package dev.gavinfecko.triagedesk.identity.application;
 
+import dev.gavinfecko.triagedesk.common.security.Role;
 import dev.gavinfecko.triagedesk.identity.domain.UserAccount;
 import dev.gavinfecko.triagedesk.identity.infra.UserRepository;
 import java.util.Collection;
@@ -26,5 +27,13 @@ public class UserDirectory {
 
     public boolean isActive(UUID id) {
         return users.findById(id).map(UserAccount::active).orElse(false);
+    }
+
+    /** Active and able to work tickets (agent or admin). */
+    public boolean isActiveStaff(UUID id) {
+        return users.findById(id)
+                .filter(UserAccount::active)
+                .map(u -> u.role() == Role.AGENT || u.role() == Role.ADMIN)
+                .orElse(false);
     }
 }

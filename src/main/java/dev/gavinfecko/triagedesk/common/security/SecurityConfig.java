@@ -38,6 +38,9 @@ public class SecurityConfig {
     /** Endpoints an anonymous caller may POST to. */
     static final String[] PUBLIC_POSTS = {"/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh"};
 
+    /** Working a ticket is for agents and admins; denied here before validation, and again in the service. */
+    static final String[] STAFF_TICKET_ACTIONS = {"/api/v1/tickets/*/assign", "/api/v1/tickets/*/queue"};
+
     static final String[] DOCS_PATHS = {
         "/v3/api-docs", "/v3/api-docs/**", "/v3/api-docs.yaml", "/swagger-ui.html", "/swagger-ui/**"
     };
@@ -61,6 +64,7 @@ public class SecurityConfig {
                             .permitAll();
                     auth.requestMatchers("/actuator/**").hasRole("ADMIN");
                     auth.requestMatchers(HttpMethod.POST, PUBLIC_POSTS).permitAll();
+                    auth.requestMatchers(HttpMethod.POST, STAFF_TICKET_ACTIONS).hasAnyRole("AGENT", "ADMIN");
                     auth.requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated();
                     auth.requestMatchers("/api/v1/users", "/api/v1/users/**").hasRole("ADMIN");
                     var docs = auth.requestMatchers(HttpMethod.GET, DOCS_PATHS);

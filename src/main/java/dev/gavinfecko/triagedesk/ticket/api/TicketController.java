@@ -77,6 +77,24 @@ public class TicketController {
         return tickets.transition(key, request.to(), request.comment());
     }
 
+    public record AssignRequest(@Nullable String assigneeId) {}
+
+    public record QueueRequest(@NotNull UUID queueId) {}
+
+    @PostMapping("/{key}/assign")
+    @Operation(
+            summary = "Assign a ticket (staff): \"me\", another agent's or admin's id, or null to unassign",
+            description = "Taking a NEW ticket opens it.")
+    public TicketView assign(@PathVariable String key, @RequestBody AssignRequest request) {
+        return tickets.assign(key, request.assigneeId());
+    }
+
+    @PostMapping("/{key}/queue")
+    @Operation(summary = "Move a ticket to another queue (staff)")
+    public TicketView moveToQueue(@PathVariable String key, @Valid @RequestBody QueueRequest request) {
+        return tickets.moveToQueue(key, request.queueId());
+    }
+
     @GetMapping
     @Operation(summary = "List tickets, newest first: your own as a requester, all of them as an agent or admin")
     public PageResponse<TicketSummary> list(
