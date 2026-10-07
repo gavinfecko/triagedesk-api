@@ -6,6 +6,7 @@ import dev.gavinfecko.triagedesk.ticket.application.TicketService.NewTicket;
 import dev.gavinfecko.triagedesk.ticket.application.TicketSummary;
 import dev.gavinfecko.triagedesk.ticket.application.TicketView;
 import dev.gavinfecko.triagedesk.ticket.domain.Priority;
+import dev.gavinfecko.triagedesk.ticket.domain.TicketStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -59,6 +60,21 @@ public class TicketController {
                 request.queueId()));
         return ResponseEntity.created(URI.create("/api/v1/tickets/" + ticket.key()))
                 .body(ticket);
+    }
+
+    public record TransitionRequest(
+            @NotNull TicketStatus to,
+            @Nullable @Size(max = 10_000) String comment) {}
+
+    @PostMapping("/{key}/transitions")
+    @Operation(
+            summary = "Move a ticket to another status",
+            description = "NEW→OPEN (staff), OPEN→PENDING (staff, comment required), PENDING→OPEN (anyone), "
+                    + "OPEN|PENDING→RESOLVED (staff, comment required), RESOLVED→CLOSED (requester or admin), "
+                    + "RESOLVED→OPEN (anyone), NEW→CANCELLED (requester or admin), OPEN|PENDING→CANCELLED (admin). "
+                    + "Anything else is 409 ticket-state-conflict. A comment is stored as a public reply.")
+    public TicketView transition(@PathVariable String key, @Valid @RequestBody TransitionRequest request) {
+        return tickets.transition(key, request.to(), request.comment());
     }
 
     @GetMapping

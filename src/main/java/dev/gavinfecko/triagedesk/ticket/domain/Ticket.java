@@ -96,6 +96,31 @@ public class Ticket {
         return ticket;
     }
 
+    /**
+     * Applies a transition the table has already approved and keeps the lifecycle timestamps honest.
+     * Callers check {@link TicketStatus#canTransition} first; this method only records the move.
+     */
+    public void transitionTo(TicketStatus to, Instant now) {
+        switch (to) {
+            case OPEN -> {
+                if (status == TicketStatus.NEW && firstRespondedAt == null) {
+                    firstRespondedAt = now;
+                }
+                if (status == TicketStatus.RESOLVED) { // reopen: the resolution is withdrawn
+                    resolvedAt = null;
+                    closedAt = null;
+                }
+            }
+            case RESOLVED -> resolvedAt = now;
+            case CLOSED -> closedAt = now;
+            case NEW, PENDING, CANCELLED -> {
+                // no timestamp of their own
+            }
+        }
+        status = to;
+        updatedAt = now;
+    }
+
     /** Staff's first public reply. Idempotent; status is untouched (assignment opens a NEW ticket, TD-24). */
     public boolean recordFirstResponse(Instant now) {
         if (firstRespondedAt != null) {

@@ -14,11 +14,16 @@ import dev.gavinfecko.triagedesk.ticket.domain.Priority;
 import dev.gavinfecko.triagedesk.ticket.domain.Queue;
 import dev.gavinfecko.triagedesk.ticket.domain.Ticket;
 import dev.gavinfecko.triagedesk.ticket.domain.TicketCreated;
+import dev.gavinfecko.triagedesk.ticket.domain.TicketStateConflict;
+import dev.gavinfecko.triagedesk.ticket.domain.TicketStatus;
+import dev.gavinfecko.triagedesk.ticket.domain.TicketStatusChanged;
+import dev.gavinfecko.triagedesk.ticket.domain.Visibility;
 import dev.gavinfecko.triagedesk.ticket.infra.CategoryRepository;
 import dev.gavinfecko.triagedesk.ticket.infra.QueueRepository;
 import dev.gavinfecko.triagedesk.ticket.infra.TicketKeys;
 import dev.gavinfecko.triagedesk.ticket.infra.TicketRepository;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -44,6 +49,7 @@ public class TicketService {
     private final QueueRepository queues;
     private final TicketKeys keys;
     private final UserDirectory people;
+    private final CommentService comments;
     private final AuditLog audit;
     private final ApplicationEventPublisher events;
     private final Clock clock;
@@ -54,6 +60,7 @@ public class TicketService {
             QueueRepository queues,
             TicketKeys keys,
             UserDirectory people,
+            CommentService comments,
             AuditLog audit,
             ApplicationEventPublisher events,
             Clock clock) {
@@ -62,6 +69,7 @@ public class TicketService {
         this.queues = queues;
         this.keys = keys;
         this.people = people;
+        this.comments = comments;
         this.audit = audit;
         this.events = events;
         this.clock = clock;
@@ -130,16 +138,48 @@ public class TicketService {
     }
 
     /**
+     * Moves a ticket through the state machine. The table decides what the caller's role may do from
+     * the current status; moves to PENDING and RESOLVED must carry a comment, which is stored as a
+     * public reply so the requester sees why they are waiting or what was done.
+     */
+    @Transactional
+    public TicketView transition(String key, TicketStatus to, @Nullable String comment) {
+        CurrentUser actor = CurrentUser.get();
+        Ticket ticket = visibleTicket(key, actor);
+        TicketStatus from = ticket.status();
+        TicketStatus.Transition move = from.transitionTo(to)
+                .filter(t -> t.allows(actor.role()))
+                .orElseThrow(() -> new TicketStateConflict(key, from, to, actor.role()));
+        boolean hasComment = comment != null && !comment.isBlank();
+        if (move.commentRequired() && !hasComment) {
+            throw new InvalidFieldException("comment", "required when moving a ticket to " + to);
+        }
+        Instant now = clock.instant();
+        ticket.transitionTo(to, now);
+        audit.record(AuditEvent.of("ticket.status_changed")
+                .actor(actor.id())
+                .ticket(ticket.id())
+                .change("status", from, to));
+        events.publishEvent(new TicketStatusChanged(ticket.id(), ticket.key(), from, to, actor.id(), now));
+        if (hasComment) {
+            comments.write(ticket, actor, Visibility.PUBLIC, comment, now);
+        }
+        return view(ticket, List.of());
+    }
+
+    private Ticket visibleTicket(String key, CurrentUser actor) {
+        return tickets.findByKey(key)
+                .filter(t -> actor.isStaff() || t.requesterId().equals(actor.id()))
+                .orElseThrow(() -> new NotFoundException("Ticket", key));
+    }
+
+    /**
      * One ticket. A requester asking for someone else's ticket gets the same 404 as for a key that
      * does not exist, so ticket keys cannot be probed. The check is here, not in the controller.
      */
     @Transactional(readOnly = true)
     public TicketView get(String key) {
-        CurrentUser actor = CurrentUser.get();
-        Ticket ticket = tickets.findByKey(key)
-                .filter(t -> actor.isStaff() || t.requesterId().equals(actor.id()))
-                .orElseThrow(() -> new NotFoundException("Ticket", key));
-        return view(ticket, List.of());
+        return view(visibleTicket(key, CurrentUser.get()), List.of());
     }
 
     /** Newest first. Requesters see their own tickets; agents and admins see all of them (filters: TD-22). */
