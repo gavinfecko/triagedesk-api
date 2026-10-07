@@ -77,7 +77,7 @@ public class TicketController {
             summary = "Move a ticket to another status",
             description = "NEW→OPEN (staff), OPEN→PENDING (staff, comment required), PENDING→OPEN (anyone), "
                     + "OPEN|PENDING→RESOLVED (staff, comment required), RESOLVED→CLOSED (requester or admin), "
-                    + "RESOLVED→OPEN (anyone), NEW→CANCELLED (requester or admin), OPEN|PENDING→CANCELLED (admin). "
+                    + "RESOLVED→OPEN (anyone), NEW→CANCELLED (requester or admin), OPEN|PENDING→CANCELLED (admin, comment required). "
                     + "Anything else is 409 ticket-state-conflict. A comment is stored as a public reply.")
     public TicketView transition(@PathVariable String key, @Valid @RequestBody TransitionRequest request) {
         return tickets.transition(key, request.to(), request.comment());

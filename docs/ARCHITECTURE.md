@@ -76,7 +76,7 @@ Inside a module the shape is conventional: `api/` (controller + request/response
 | `OPEN` / `PENDING` | `RESOLVED` | Agent, Admin | Resolution note required. Resolution timer stops. `ticket.resolved` |
 | `RESOLVED` | `CLOSED` | Requester (confirm), Admin, or scheduler after 3 business days | `ticket.closed` |
 | `RESOLVED` | `OPEN` | Requester, Agent, Admin | Reopen within 14 days of `resolved_at` (anyone; later it is a new ticket); `reopen_count` increments; a fresh resolution timer starts. `ticket.reopened` |
-| `NEW` / `OPEN` / `PENDING` | `CANCELLED` | Requester (own ticket, only while `NEW`), Admin | Terminal. Timers cancelled. |
+| `NEW` / `OPEN` / `PENDING` | `CANCELLED` | Requester (own ticket, only while `NEW`), Admin (comment required once work has started) | Terminal. Timers cancelled. |
 | `CLOSED` / `CANCELLED` | anything | nobody | Terminal. 409 Problem Details `ticket-state-conflict`. |
 
 Implemented as an enum-backed transition table (`TicketStatus.canTransition(to, actorRole)`), tested exhaustively (every from/to/role triple).

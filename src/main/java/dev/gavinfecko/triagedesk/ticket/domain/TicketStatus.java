@@ -37,14 +37,14 @@ public enum TicketStatus {
         // From NEW: staff acknowledge or assign (TD-24 assigns); the requester may still cancel; admins may cancel.
         allow(NEW, OPEN, STAFF, false);
         allow(NEW, CANCELLED, REQUESTER_OR_ADMIN, false);
-        // From OPEN: wait on the requester (say why), resolve (say what was done), or an admin cancels.
+        // From OPEN: wait on the requester (say why), resolve (say what was done), or an admin cancels (say why).
         allow(OPEN, PENDING, STAFF, true);
         allow(OPEN, RESOLVED, STAFF, true);
-        allow(OPEN, CANCELLED, ADMIN, false);
-        // From PENDING: the requester's reply (TD-30) or anyone reopens; staff may resolve; an admin cancels.
+        allow(OPEN, CANCELLED, ADMIN, true);
+        // From PENDING: the requester's reply (TD-30) or anyone reopens; staff may resolve; an admin cancels (say why).
         allow(PENDING, OPEN, ANYONE, false);
         allow(PENDING, RESOLVED, STAFF, true);
-        allow(PENDING, CANCELLED, ADMIN, false);
+        allow(PENDING, CANCELLED, ADMIN, true);
         // From RESOLVED: the requester (or an admin, or the scheduler) closes; anyone may reopen (window: TD-27).
         allow(RESOLVED, CLOSED, REQUESTER_OR_ADMIN, false);
         allow(RESOLVED, OPEN, ANYONE, false);
