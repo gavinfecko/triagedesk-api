@@ -27,6 +27,7 @@ import dev.gavinfecko.triagedesk.ticket.infra.CategoryRepository;
 import dev.gavinfecko.triagedesk.ticket.infra.QueueRepository;
 import dev.gavinfecko.triagedesk.ticket.infra.TicketKeys;
 import dev.gavinfecko.triagedesk.ticket.infra.TicketRepository;
+import dev.gavinfecko.triagedesk.ticket.infra.TicketSpecifications;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -41,7 +42,6 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -362,14 +362,17 @@ public class TicketService {
         return view(visibleTicket(key, CurrentUser.get()), List.of());
     }
 
-    /** Newest first. Requesters see their own tickets; agents and admins see all of them (filters: TD-22). */
+    /**
+     * The ticket list. Filters combine with AND, values within a filter with OR; sort fields are
+     * allow-listed; page size is capped. Requesters are silently scoped to their own tickets, and
+     * their {@code requester_id} filter is ignored; agents and admins see everything.
+     */
     @Transactional(readOnly = true)
-    public PageResponse<TicketSummary> list(int page, int size) {
+    public PageResponse<TicketSummary> list(TicketQuery query) {
         CurrentUser actor = CurrentUser.get();
-        Pageable request =
-                PageResponse.request(page, size, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id")));
-        Page<Ticket> found =
-                actor.isStaff() ? tickets.findAll(request) : tickets.findByRequesterId(actor.id(), request);
+        Pageable request = PageResponse.request(query.page(), query.size(), query.toSort());
+        Page<Ticket> found = tickets.findAll(
+                TicketSpecifications.matching(query, actor.id(), actor.isStaff() ? null : actor.id()), request);
 
         Set<UUID> personIds = new HashSet<>();
         found.forEach(t -> {
