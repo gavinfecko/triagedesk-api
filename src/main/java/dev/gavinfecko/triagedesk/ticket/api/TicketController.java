@@ -3,6 +3,7 @@ package dev.gavinfecko.triagedesk.ticket.api;
 import dev.gavinfecko.triagedesk.common.errors.InvalidFieldException;
 import dev.gavinfecko.triagedesk.common.web.PageResponse;
 import dev.gavinfecko.triagedesk.common.web.Preconditions;
+import dev.gavinfecko.triagedesk.ticket.application.TicketQuery;
 import dev.gavinfecko.triagedesk.ticket.application.TicketService;
 import dev.gavinfecko.triagedesk.ticket.application.TicketService.NewTicket;
 import dev.gavinfecko.triagedesk.ticket.application.TicketService.TicketEdits;
@@ -17,6 +18,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpHeaders;
@@ -30,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.WebRequest;
 
 @RestController
 @RequestMapping("/api/v1/tickets")
@@ -102,10 +105,34 @@ public class TicketController {
     }
 
     @GetMapping
-    @Operation(summary = "List tickets, newest first: your own as a requester, all of them as an agent or admin")
+    @Operation(
+            summary = "List and search tickets",
+            description =
+                    "Filters combine with AND; comma-separated values within one filter are OR. assignee_id accepts "
+                            + "\"me\", \"unassigned\" or a user id. sort is field,direction (created_at, updated_at, priority, status, "
+                            + "key; asc or desc) and may repeat. size is capped at 100. Requesters always see only their own tickets.")
     public PageResponse<TicketSummary> list(
-            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
-        return tickets.list(page, size);
+            @RequestParam(required = false) @Nullable List<TicketStatus> status,
+            @RequestParam(required = false) @Nullable List<Priority> priority,
+            @RequestParam(name = "queue_id", required = false) @Nullable UUID queueId,
+            @RequestParam(name = "category_id", required = false) @Nullable UUID categoryId,
+            @RequestParam(name = "requester_id", required = false) @Nullable UUID requesterId,
+            @RequestParam(name = "assignee_id", required = false) @Nullable String assigneeId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size,
+            WebRequest request) {
+        // Read sort raw: Spring would split "priority,asc" on the comma when binding a List<String>.
+        String[] sort = request.getParameterValues("sort");
+        return tickets.list(new TicketQuery(
+                status == null ? List.of() : status,
+                priority == null ? List.of() : priority,
+                queueId,
+                categoryId,
+                requesterId,
+                assigneeId,
+                sort == null ? List.of() : List.of(sort),
+                page,
+                size));
     }
 
     @GetMapping("/{key}")
