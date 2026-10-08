@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 
-/** A clock ran out. Notifications (TD-50) tell the assignee and the admins; {@code escalatedTo} is set if the priority rose. */
+/** A clock ran out. The assignee is emailed (TD-50); {@code escalatedTo} is set if the priority rose. */
 public record SlaBreached(
         UUID ticketId,
         Kind kind,

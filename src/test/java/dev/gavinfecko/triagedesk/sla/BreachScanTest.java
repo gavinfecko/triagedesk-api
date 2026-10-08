@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.gavinfecko.triagedesk.common.security.Role;
 import dev.gavinfecko.triagedesk.sla.application.BreachScanner;
 import dev.gavinfecko.triagedesk.sla.domain.SlaBreached;
+import dev.gavinfecko.triagedesk.sla.domain.SlaBreachesFound;
 import dev.gavinfecko.triagedesk.sla.infra.LeaseLock;
 import dev.gavinfecko.triagedesk.support.Api;
 import dev.gavinfecko.triagedesk.support.Api.Session;
@@ -68,6 +69,7 @@ class BreachScanTest {
         api = new Api(mvc, jdbc);
         requester = api.loginAs(Role.REQUESTER);
         scanner.scan(); // start from a database with nothing overdue
+        events.clear();
     }
 
     UUID create(Priority priority) {
@@ -147,6 +149,10 @@ class BreachScanTest {
 
         List<SlaBreached> published = events.stream(SlaBreached.class).toList();
         assertThat(published).hasSize(4);
+        assertThat(events.stream(SlaBreachesFound.class))
+                .as("one summary for the whole run")
+                .singleElement()
+                .satisfies(run -> assertThat(run.breaches()).containsExactlyInAnyOrderElementsOf(published));
         assertThat(published)
                 .filteredOn(e -> e.ticketId().equals(p4))
                 .singleElement()

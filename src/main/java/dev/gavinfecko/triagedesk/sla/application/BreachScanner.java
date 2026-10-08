@@ -3,6 +3,7 @@ package dev.gavinfecko.triagedesk.sla.application;
 import dev.gavinfecko.triagedesk.common.audit.AuditEvent;
 import dev.gavinfecko.triagedesk.common.audit.AuditLog;
 import dev.gavinfecko.triagedesk.sla.domain.SlaBreached;
+import dev.gavinfecko.triagedesk.sla.domain.SlaBreachesFound;
 import dev.gavinfecko.triagedesk.sla.domain.SlaTimer;
 import dev.gavinfecko.triagedesk.sla.domain.SlaTimer.Kind;
 import dev.gavinfecko.triagedesk.sla.infra.LeaseLock;
@@ -14,6 +15,7 @@ import io.micrometer.core.instrument.Timer;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -99,23 +101,27 @@ public class BreachScanner {
         }
     }
 
+    /** Every batch, then one {@link SlaBreachesFound} for the whole run (admins get a single digest). */
     private Result scanAll() {
-        int breached = 0;
-        int escalated = 0;
+        List<SlaBreached> found = new ArrayList<>();
         while (true) {
-            int[] batch = transactions.execute(status -> batch());
-            breached += batch[0];
-            escalated += batch[1];
-            if (batch[0] < BATCH) {
-                return new Result(true, breached, escalated);
+            List<SlaBreached> batch = transactions.execute(status -> batch());
+            found.addAll(batch);
+            if (batch.size() < BATCH) {
+                if (!found.isEmpty()) {
+                    events.publishEvent(new SlaBreachesFound(List.copyOf(found)));
+                }
+                int escalated = (int)
+                        found.stream().filter(b -> b.escalatedTo() != null).count();
+                return new Result(true, found.size(), escalated);
             }
         }
     }
 
-    private int[] batch() {
+    private List<SlaBreached> batch() {
         Instant now = clock.instant();
         List<SlaTimer> due = timers.lockOverdue(now, BATCH);
-        int escalated = 0;
+        List<SlaBreached> breaches = new ArrayList<>();
         for (SlaTimer timer : due) {
             timer.breach(now);
             audit.record(AuditEvent.of("sla.breached")
@@ -124,11 +130,12 @@ public class BreachScanner {
             @Nullable Priority raisedTo = null;
             if (timer.kind() == Kind.RESOLUTION && ESCALATE.contains(policyPriority(timer))) {
                 raisedTo = tickets.escalate(timer.ticketId()).orElse(null);
-                escalated += raisedTo != null ? 1 : 0;
             }
-            events.publishEvent(new SlaBreached(timer.ticketId(), timer.kind(), timer.dueAt(), now, raisedTo));
+            SlaBreached breach = new SlaBreached(timer.ticketId(), timer.kind(), timer.dueAt(), now, raisedTo);
+            events.publishEvent(breach);
+            breaches.add(breach);
         }
-        return new int[] {due.size(), escalated};
+        return breaches;
     }
 
     private Priority policyPriority(SlaTimer timer) {

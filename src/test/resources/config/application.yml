@@ -1,4 +1,7 @@
 # Test-only settings, loaded in addition to src/main/resources/application.yml.
+spring:
+  mail:
+    host: localhost   # makes Boot create the mail sender; TestcontainersConfiguration points it at Mailpit
 triagedesk:
   scheduling:
     enabled: false   # tests call the jobs directly
