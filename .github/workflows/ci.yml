@@ -124,6 +124,16 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      # The demo smoke test runs against the image before anything is pushed: a release tag never publishes an
+      # image whose demo path is broken (TD-114).
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: triagedesk-api:smoke
+          cache-from: type=gha
+      - name: Demo smoke test
+        run: scripts/demo-smoke.sh --compose
       - id: meta
         uses: docker/metadata-action@v6
         with:
