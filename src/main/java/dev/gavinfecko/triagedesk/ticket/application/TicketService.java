@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -333,6 +334,26 @@ public class TicketService {
                     "Tickets can only be assigned to an active agent or admin");
         }
         return id;
+    }
+
+    /**
+     * SLA escalation: raises a ticket one priority level as the system (no actor), audited and announced like a
+     * person's change so the SLA clocks reschedule. Finished tickets and P1 are left alone.
+     */
+    @Transactional
+    public Optional<Priority> escalate(UUID ticketId) {
+        Ticket ticket = tickets.findById(ticketId).orElseThrow(() -> new NotFoundException("Ticket", ticketId));
+        Priority before = ticket.priority();
+        Priority after = before.raised();
+        if (ticket.status().isTerminal() || after == before) {
+            return Optional.empty();
+        }
+        Instant now = clock.instant();
+        ticket.changePriority(after, now);
+        audit.record(
+                AuditEvent.of("ticket.priority_changed").ticket(ticket.id()).change("priority", before, after));
+        events.publishEvent(new TicketPriorityChanged(ticket.id(), ticket.key(), before, after, null, now));
+        return Optional.of(after);
     }
 
     private static CurrentUser requireStaff() {

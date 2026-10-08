@@ -117,6 +117,11 @@ public class SlaTimer {
         metAt = at;
     }
 
+    /** Marked by the breach scan; a breached clock is never selected again. */
+    public void breach(Instant at) {
+        breachedAt = at;
+    }
+
     public void cancel(Instant at) {
         cancelledAt = at;
     }

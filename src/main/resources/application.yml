@@ -55,6 +55,8 @@ springdoc:
   default-produces-media-type: application/json
 
 triagedesk:
+  scheduling:
+    enabled: true    # background jobs: SLA breach scan (TD-43)
   version: "@project.version@"
   jwt:
     issuer: triagedesk
