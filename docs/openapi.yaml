@@ -23,6 +23,71 @@ tags:
 - name: Auth
   description: "Register, log in, refresh and log out"
 paths:
+  /api/v1/tickets/{key}/tags:
+    put:
+      tags:
+      - Tickets
+      summary: Replace a ticket's tags (staff)
+      description: Names are lower-cased and trimmed; unknown tags are created. Send
+        an empty list to clear.
+      operationId: replaceTags
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketView"
+        "400":
+          description: Validation failed or the request is malformed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "403":
+          description: The caller's role does not allow this
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: The resource does not exist or is not visible to the caller
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: A business rule refused the request (see the type slug)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: Unexpected error; quote the correlation id
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
   /api/v1/users:
     get:
       tags:
@@ -218,10 +283,10 @@ paths:
       - Tickets
       summary: List and search tickets
       description: "Filters combine with AND; comma-separated values within one filter\
-        \ are OR. assignee_id accepts \"me\", \"unassigned\" or a user id. sort is\
-        \ field,direction (created_at, updated_at, priority, status, key; asc or desc)\
-        \ and may repeat. size is capped at 100. Requesters always see only their\
-        \ own tickets."
+        \ are OR. assignee_id accepts \"me\", \"unassigned\" or a user id; tag is\
+        \ one tag name. sort is field,direction (created_at, updated_at, priority,\
+        \ status, key; asc or desc) and may repeat. size is capped at 100. Requesters\
+        \ always see only their own tickets."
       operationId: list_1
       parameters:
       - name: status
@@ -269,6 +334,11 @@ paths:
           type: string
           format: uuid
       - name: assignee_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: tag
         in: query
         required: false
         schema:
@@ -1211,6 +1281,57 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
+  /api/v1/tags:
+    get:
+      tags:
+      - Reference data
+      summary: "Tags in use, with how many tickets carry each"
+      operationId: tags
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TagView"
+        "400":
+          description: Validation failed or the request is malformed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "403":
+          description: The caller's role does not allow this
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: The resource does not exist or is not visible to the caller
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: A business rule refused the request (see the type slug)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: Unexpected error; quote the correlation id
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
   /api/v1/queues:
     get:
       tags:
@@ -1315,6 +1436,84 @@ paths:
                 $ref: "#/components/schemas/ProblemDetail"
 components:
   schemas:
+    Person:
+      properties:
+        id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+    Ref:
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    TicketView:
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum:
+          - NEW
+          - OPEN
+          - PENDING
+          - RESOLVED
+          - CLOSED
+          - CANCELLED
+        priority:
+          type: string
+          enum:
+          - P1_CRITICAL
+          - P2_HIGH
+          - P3_MEDIUM
+          - P4_LOW
+        category:
+          $ref: "#/components/schemas/Ref"
+        queue:
+          $ref: "#/components/schemas/Ref"
+        requester:
+          $ref: "#/components/schemas/Person"
+        assignee:
+          $ref: "#/components/schemas/Person"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        first_responded_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+        closed_at:
+          type: string
+          format: date-time
+        reopen_count:
+          type: integer
+          format: int32
+        tags:
+          type: array
+          items:
+            type: string
+        version:
+          type: integer
+          format: int64
+        warnings:
+          type: array
+          items:
+            type: string
     CreateUserRequest:
       properties:
         email:
@@ -1394,80 +1593,6 @@ components:
       - description
       - priority
       - title
-    Person:
-      properties:
-        id:
-          type: string
-          format: uuid
-        display_name:
-          type: string
-    Ref:
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-    TicketView:
-      properties:
-        id:
-          type: string
-          format: uuid
-        key:
-          type: string
-        title:
-          type: string
-        description:
-          type: string
-        status:
-          type: string
-          enum:
-          - NEW
-          - OPEN
-          - PENDING
-          - RESOLVED
-          - CLOSED
-          - CANCELLED
-        priority:
-          type: string
-          enum:
-          - P1_CRITICAL
-          - P2_HIGH
-          - P3_MEDIUM
-          - P4_LOW
-        category:
-          $ref: "#/components/schemas/Ref"
-        queue:
-          $ref: "#/components/schemas/Ref"
-        requester:
-          $ref: "#/components/schemas/Person"
-        assignee:
-          $ref: "#/components/schemas/Person"
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        first_responded_at:
-          type: string
-          format: date-time
-        resolved_at:
-          type: string
-          format: date-time
-        closed_at:
-          type: string
-          format: date-time
-        reopen_count:
-          type: integer
-          format: int32
-        version:
-          type: integer
-          format: int64
-        warnings:
-          type: array
-          items:
-            type: string
     TransitionRequest:
       properties:
         to:
@@ -1694,6 +1819,16 @@ components:
         created_at:
           type: string
           format: date-time
+    TagView:
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        count:
+          type: integer
+          format: int64
     CategoryView:
       properties:
         id:

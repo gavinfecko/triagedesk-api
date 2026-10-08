@@ -2,6 +2,7 @@ package dev.gavinfecko.triagedesk.ticket.api;
 
 import dev.gavinfecko.triagedesk.ticket.application.ReferenceData;
 import dev.gavinfecko.triagedesk.ticket.application.ReferenceData.CategoryView;
+import dev.gavinfecko.triagedesk.ticket.application.ReferenceData.TagView;
 import dev.gavinfecko.triagedesk.ticket.application.TicketView.Ref;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,5 +32,11 @@ public class ReferenceDataController {
     @Operation(summary = "Work queues")
     public List<Ref> queues() {
         return reference.queues();
+    }
+
+    @GetMapping("/tags")
+    @Operation(summary = "Tags in use, with how many tickets carry each")
+    public List<TagView> tags() {
+        return reference.tags();
     }
 }

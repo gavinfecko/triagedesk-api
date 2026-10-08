@@ -15,6 +15,7 @@ import dev.gavinfecko.triagedesk.ticket.domain.Category;
 import dev.gavinfecko.triagedesk.ticket.domain.Priority;
 import dev.gavinfecko.triagedesk.ticket.domain.Queue;
 import dev.gavinfecko.triagedesk.ticket.domain.ReopenWindowClosed;
+import dev.gavinfecko.triagedesk.ticket.domain.Tag;
 import dev.gavinfecko.triagedesk.ticket.domain.Ticket;
 import dev.gavinfecko.triagedesk.ticket.domain.TicketAssigned;
 import dev.gavinfecko.triagedesk.ticket.domain.TicketCreated;
@@ -25,6 +26,7 @@ import dev.gavinfecko.triagedesk.ticket.domain.TicketStatusChanged;
 import dev.gavinfecko.triagedesk.ticket.domain.Visibility;
 import dev.gavinfecko.triagedesk.ticket.infra.CategoryRepository;
 import dev.gavinfecko.triagedesk.ticket.infra.QueueRepository;
+import dev.gavinfecko.triagedesk.ticket.infra.TagRepository;
 import dev.gavinfecko.triagedesk.ticket.infra.TicketKeys;
 import dev.gavinfecko.triagedesk.ticket.infra.TicketRepository;
 import dev.gavinfecko.triagedesk.ticket.infra.TicketSpecifications;
@@ -54,6 +56,7 @@ public class TicketService {
     private final TicketRepository tickets;
     private final CategoryRepository categories;
     private final QueueRepository queues;
+    private final TagRepository tags;
     private final TicketKeys keys;
     private final UserDirectory people;
     private final CommentService comments;
@@ -65,6 +68,7 @@ public class TicketService {
             TicketRepository tickets,
             CategoryRepository categories,
             QueueRepository queues,
+            TagRepository tags,
             TicketKeys keys,
             UserDirectory people,
             CommentService comments,
@@ -74,6 +78,7 @@ public class TicketService {
         this.tickets = tickets;
         this.categories = categories;
         this.queues = queues;
+        this.tags = tags;
         this.keys = keys;
         this.people = people;
         this.comments = comments;
@@ -371,8 +376,16 @@ public class TicketService {
     public PageResponse<TicketSummary> list(TicketQuery query) {
         CurrentUser actor = CurrentUser.get();
         Pageable request = PageResponse.request(query.page(), query.size(), query.toSort());
+        UUID tagId = null;
+        if (query.tag() != null) {
+            String name = Tag.normalize(query.tag());
+            tagId = name == null ? null : tags.findByName(name).map(Tag::id).orElse(null);
+            if (tagId == null) { // an unknown tag matches nothing, which is an empty page, not an error
+                return PageResponse.of(Page.empty(request), t -> null);
+            }
+        }
         Page<Ticket> found = tickets.findAll(
-                TicketSpecifications.matching(query, actor.id(), actor.isStaff() ? null : actor.id()), request);
+                TicketSpecifications.matching(query, actor.id(), actor.isStaff() ? null : actor.id(), tagId), request);
 
         Set<UUID> personIds = new HashSet<>();
         found.forEach(t -> {
@@ -402,6 +415,50 @@ public class TicketService {
                         t.updatedAt()));
     }
 
+    /**
+     * Replaces a ticket's tags (staff). Names are normalised; unknown tags are created. The whole set
+     * is audited as one change so a reader sees "was [a, b], now [a, c]".
+     */
+    @Transactional
+    public TicketView replaceTags(String key, List<String> rawNames) {
+        CurrentUser actor = requireStaff();
+        Ticket ticket = workable(key, actor);
+        Set<String> names = new java.util.TreeSet<>();
+        for (String raw : rawNames) {
+            String name = Tag.normalize(raw);
+            if (name == null) {
+                throw new InvalidFieldException(
+                        "tags",
+                        "'" + raw
+                                + "' is not a tag: 2–30 letters, digits or dashes, not starting or ending with a dash");
+            }
+            names.add(name);
+        }
+        Map<String, Tag> existing = tags.findByNameIn(names).stream().collect(Collectors.toMap(Tag::name, t -> t));
+        Set<UUID> ids = new HashSet<>();
+        for (String name : names) {
+            ids.add(existing.computeIfAbsent(name, n -> tags.save(new Tag(n))).id());
+        }
+        List<String> before = tagNames(ticket);
+        if (ticket.retag(ids, clock.instant())) {
+            audit.record(AuditEvent.of("ticket.tags_changed")
+                    .actor(actor.id())
+                    .ticket(ticket.id())
+                    .change("tags", before, List.copyOf(names)));
+        }
+        return view(ticket, List.of());
+    }
+
+    private List<String> tagNames(Ticket ticket) {
+        if (ticket.tagIds().isEmpty()) {
+            return List.of();
+        }
+        return tags.findAllById(ticket.tagIds()).stream()
+                .map(Tag::name)
+                .sorted()
+                .toList();
+    }
+
     TicketView view(Ticket ticket, List<String> warnings) {
         Set<UUID> ids = new HashSet<>();
         ids.add(ticket.requesterId());
@@ -428,6 +485,7 @@ public class TicketService {
                 ticket.resolvedAt(),
                 ticket.closedAt(),
                 ticket.reopenCount(),
+                tagNames(ticket),
                 ticket.version(),
                 List.copyOf(warnings));
     }
