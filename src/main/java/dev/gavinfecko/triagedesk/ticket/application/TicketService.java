@@ -379,6 +379,21 @@ public class TicketService {
         return true;
     }
 
+    /** What notifications need to know about a ticket, without a caller's visibility rules (system use only). */
+    public record TicketFacts(
+            UUID id,
+            String key,
+            String title,
+            TicketStatus status,
+            UUID requesterId,
+            @Nullable UUID assigneeId) {}
+
+    @Transactional(readOnly = true)
+    public Optional<TicketFacts> facts(UUID ticketId) {
+        return tickets.findById(ticketId)
+                .map(t -> new TicketFacts(t.id(), t.key(), t.title(), t.status(), t.requesterId(), t.assigneeId()));
+    }
+
     private static CurrentUser requireStaff() {
         CurrentUser actor = CurrentUser.get();
         if (!actor.isStaff()) {

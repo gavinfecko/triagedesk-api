@@ -55,6 +55,10 @@ springdoc:
   default-produces-media-type: application/json
 
 triagedesk:
+  app:
+    base-url: ${APP_BASE_URL:http://localhost:4200}   # links in emails point at the web client
+  mail:
+    from: ${MAIL_FROM:TriageDesk <helpdesk@triagedesk.local>}
   scheduling:
     enabled: true    # background jobs: SLA breach scan (TD-43)
   version: "@project.version@"

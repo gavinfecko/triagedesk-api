@@ -19,6 +19,8 @@ public interface UserRepository extends JpaRepository<UserAccount, UUID> {
 
     Optional<UserAccount> findByEmail(String email);
 
+    List<UserAccount> findByRoleAndActiveTrue(Role role);
+
     @Query(
             "select u from UserAccount u where (:role is null or u.role = :role) and (:active is null or u.active = :active)")
     Page<UserAccount> search(@Nullable Role role, @Nullable Boolean active, Pageable pageable);
