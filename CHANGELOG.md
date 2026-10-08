@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-10-08
+Sprint 3: SLA clocks that count business hours, breach detection with escalation, email notifications, tags and search.
+
+### Added
+- Tags on tickets: replace a ticket's tag set, tag usage counts, `?tag=` filter (TD-32).
+- Full-text search over title and description with `?q=`, ranked by relevance, backed by a GIN index (TD-33).
+- Business-hours calendars with holidays and DST-safe arithmetic, property-tested; `GET/PUT /sla/calendars` for admins (TD-41).
+- SLA policies per priority with the seeded defaults; `GET /sla/policies` and audited `PATCH` for admins (TD-40).
+- SLA timers on every ticket: first response and resolution, paused while PENDING, rescheduled on a priority change, restarted on reopen; `GET /tickets/{key}/sla` (TD-42).
+- Breach scan every minute under a lease lock: breached clocks are audited, P3/P4 resolution breaches raise the priority one level; `sla.scan` timer (TD-43).
+- SLA state on every ticket list row, `?sla_status=` filter and `sort=sla_due` (TD-44).
+- Resolved tickets close automatically after three business days on their calendar (TD-45).
+- Email notifications after commit on a dedicated pool: ticket received, assigned, public replies, resolved, auto-closed, SLA breaches (assignee per ticket, admins one digest per scan); Mailpit in dev and tests, SMTP from the environment in production (TD-50).
+- Change your own password; an admin-issued temporary password allows nothing else until it is changed (TD-113).
+- Scripted demo smoke test against a fresh stack, run in CI before any image is pushed; `make smoke` (TD-114).
+
 ## [0.3.0] — 2026-10-07
 Sprint 2: agents can work tickets end to end, with a full audit trail.
 
