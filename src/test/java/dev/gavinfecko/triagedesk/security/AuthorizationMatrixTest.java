@@ -48,6 +48,7 @@ class AuthorizationMatrixTest {
     static Stream<Endpoint> endpoints() {
         return Stream.of(
                 new Endpoint(HttpMethod.GET, "/api/v1/users/me", null, ANY),
+                new Endpoint(HttpMethod.POST, "/api/v1/users/me/password", "{}", ANY),
                 new Endpoint(HttpMethod.GET, "/api/v1/users", null, ADMIN),
                 new Endpoint(HttpMethod.POST, "/api/v1/users", "{}", ADMIN),
                 new Endpoint(HttpMethod.PATCH, "/api/v1/users/" + UUID.randomUUID(), "{}", ADMIN),

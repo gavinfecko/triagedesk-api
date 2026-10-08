@@ -4,6 +4,7 @@ import dev.gavinfecko.triagedesk.common.security.CurrentUser;
 import dev.gavinfecko.triagedesk.common.security.Role;
 import dev.gavinfecko.triagedesk.common.web.PageResponse;
 import dev.gavinfecko.triagedesk.identity.application.NotBreached;
+import dev.gavinfecko.triagedesk.identity.application.PasswordService;
 import dev.gavinfecko.triagedesk.identity.application.UserAdminService;
 import dev.gavinfecko.triagedesk.identity.application.UserAdminService.NewUser;
 import dev.gavinfecko.triagedesk.identity.application.UserAdminService.UserChanges;
@@ -37,9 +38,12 @@ public class UserController {
     private final UserQueries queries;
     private final UserAdminService admin;
 
-    public UserController(UserQueries queries, UserAdminService admin) {
+    private final PasswordService passwordChanges;
+
+    public UserController(UserQueries queries, UserAdminService admin, PasswordService passwordChanges) {
         this.queries = queries;
         this.admin = admin;
+        this.passwordChanges = passwordChanges;
     }
 
     public record CreateUserRequest(
@@ -58,6 +62,23 @@ public class UserController {
     @Operation(summary = "The calling user")
     public UserView me() {
         return queries.byId(CurrentUser.get().id());
+    }
+
+    public record ChangePasswordRequest(
+            @NotBlank String currentPassword,
+
+            @NotBlank @Size(min = 12, max = 128) @NotBreached
+            String newPassword) {}
+
+    @PostMapping("/me/password")
+    @Operation(
+            summary = "Change your own password",
+            description =
+                    "Needs the current password (401 if wrong). Ends every other session of yours and clears "
+                            + "the temporary-password requirement; refresh your token afterwards to drop it from the token too.")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        passwordChanges.change(request.currentPassword(), request.newPassword());
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping

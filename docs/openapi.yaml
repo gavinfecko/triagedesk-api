@@ -398,6 +398,60 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
+  /api/v1/users/me/password:
+    post:
+      tags:
+      - Users
+      summary: Change your own password
+      description: Needs the current password (401 if wrong). Ends every other session
+        of yours and clears the temporary-password requirement; refresh your token
+        afterwards to drop it from the token too.
+      operationId: changePassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Validation failed or the request is malformed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "403":
+          description: The caller's role does not allow this
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: The resource does not exist or is not visible to the caller
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: A business rule refused the request (see the type slug)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: Unexpected error; quote the correlation id
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
   /api/v1/tickets:
     get:
       tags:
@@ -2036,6 +2090,18 @@ components:
         created_at:
           type: string
           format: date-time
+    ChangePasswordRequest:
+      properties:
+        current_password:
+          type: string
+          minLength: 1
+        new_password:
+          type: string
+          maxLength: 128
+          minLength: 12
+      required:
+      - current_password
+      - new_password
     CreateTicketRequest:
       properties:
         title:

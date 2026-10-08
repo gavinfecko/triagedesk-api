@@ -79,6 +79,13 @@ public class UserAccount {
         this.updatedAt = now;
     }
 
+    /** A new password chosen by the user: any temporary-password requirement is satisfied. */
+    public void changePassword(String newHash, Instant now) {
+        this.passwordHash = newHash;
+        this.mustChangePassword = false;
+        this.updatedAt = now;
+    }
+
     public void deactivate(Instant now) {
         this.active = false;
         this.updatedAt = now;

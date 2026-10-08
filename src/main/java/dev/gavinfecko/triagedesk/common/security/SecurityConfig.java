@@ -18,6 +18,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.servlet.HandlerExceptionResolver;
@@ -70,6 +71,8 @@ public class SecurityConfig {
                     auth.requestMatchers(HttpMethod.GET, "/api/v1/sla/**").hasAnyRole("AGENT", "ADMIN");
                     auth.requestMatchers("/api/v1/sla/**").hasRole("ADMIN");
                     auth.requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated();
+                    auth.requestMatchers(HttpMethod.POST, "/api/v1/users/me/password")
+                            .authenticated();
                     auth.requestMatchers("/api/v1/users", "/api/v1/users/**").hasRole("ADMIN");
                     var docs = auth.requestMatchers(HttpMethod.GET, DOCS_PATHS);
                     if (docsPublic) {
@@ -79,6 +82,7 @@ public class SecurityConfig {
                     }
                     auth.anyRequest().authenticated();
                 })
+                .addFilterAfter(new PasswordChangeRequiredFilter(resolver), BearerTokenAuthenticationFilter.class)
                 .build();
     }
 

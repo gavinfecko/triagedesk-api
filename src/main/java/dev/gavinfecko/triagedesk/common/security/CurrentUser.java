@@ -11,6 +11,8 @@ public record CurrentUser(UUID id, Role role) {
 
     public static final String ROLE_CLAIM = "role";
     public static final String FAMILY_CLAIM = "fid";
+    /** True while the user still has an admin-issued temporary password (TD-113). */
+    public static final String PASSWORD_CHANGE_CLAIM = "pwc";
 
     public static CurrentUser get() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
