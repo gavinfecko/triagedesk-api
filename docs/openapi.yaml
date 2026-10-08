@@ -1470,6 +1470,65 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
+  /api/v1/tickets/{key}/sla:
+    get:
+      tags:
+      - SLA
+      summary: "The ticket's SLA clocks: first response and resolution"
+      description: "status is on_track (under 75 % of the budget used), at_risk, breached,\
+        \ met, paused or cancelled; remaining_business_minutes counts only the policy\
+        \ calendar's opening hours. Requesters see their own tickets' clocks only\
+        \ (404 otherwise)."
+      operationId: get_3
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketSlaView"
+        "400":
+          description: Validation failed or the request is malformed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "403":
+          description: The caller's role does not allow this
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: The resource does not exist or is not visible to the caller
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: A business rule refused the request (see the type slug)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: Unexpected error; quote the correlation id
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
   /api/v1/tickets/{key}/audit:
     get:
       tags:
@@ -2248,6 +2307,70 @@ components:
           type: string
           format: date-time
         updated_at:
+          type: string
+          format: date-time
+    TicketSlaView:
+      properties:
+        ticket_key:
+          type: string
+        first_response:
+          $ref: "#/components/schemas/TimerView"
+        resolution:
+          $ref: "#/components/schemas/TimerView"
+    TimerView:
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum:
+          - FIRST_RESPONSE
+          - RESOLUTION
+        status:
+          type: string
+          enum:
+          - on_track
+          - at_risk
+          - breached
+          - met
+          - paused
+          - cancelled
+        policy_priority:
+          type: string
+          enum:
+          - P1_CRITICAL
+          - P2_HIGH
+          - P3_MEDIUM
+          - P4_LOW
+        calendar_id:
+          type: string
+          format: uuid
+        budget_minutes:
+          type: integer
+          format: int32
+        started_at:
+          type: string
+          format: date-time
+        due_at:
+          type: string
+          format: date-time
+        remaining_business_minutes:
+          type: integer
+          format: int64
+        paused_total_minutes:
+          type: integer
+          format: int64
+        paused_at:
+          type: string
+          format: date-time
+        met_at:
+          type: string
+          format: date-time
+        breached_at:
+          type: string
+          format: date-time
+        cancelled_at:
           type: string
           format: date-time
     AuditEntry:
