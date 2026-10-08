@@ -64,6 +64,13 @@ class TicketIndexTest {
     }
 
     @Test
+    void fullTextSearchUsesTheGinIndexThroughTheInlinedFunction() {
+        tenThousandTickets();
+        String plan = plan("select * from tickets where ticket_matches(search_vector, 'zebra') limit 50");
+        assertThat(plan).as(plan).contains("tickets_search_idx");
+    }
+
+    @Test
     void aRequestersOwnListUsesTheRequesterIndex() {
         tenThousandTickets();
         String plan = plan("select * from tickets where requester_id = '" + UUID.randomUUID()

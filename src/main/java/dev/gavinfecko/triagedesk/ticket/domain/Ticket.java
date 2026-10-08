@@ -14,6 +14,8 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -70,6 +72,11 @@ public class Ticket {
 
     @Column(name = "closed_at")
     private @Nullable Instant closedAt;
+
+    /** Maintained by the database (generated column); only ever used in search predicates. */
+    @JdbcTypeCode(SqlTypes.OTHER)
+    @Column(name = "search_vector", columnDefinition = "tsvector", insertable = false, updatable = false)
+    private @Nullable Object searchVector;
 
     @ElementCollection
     @CollectionTable(name = "ticket_tags", joinColumns = @JoinColumn(name = "ticket_id"))

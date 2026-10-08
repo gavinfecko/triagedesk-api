@@ -12,8 +12,8 @@ import org.springframework.data.domain.Sort;
 /**
  * A ticket list request (ARCHITECTURE.md §7): filters combine with AND, values inside one filter
  * with OR, and {@code sort} accepts only the fields listed here. {@code assignee} is {@code "me"},
- * {@code "unassigned"} or a user id; {@code tag} is one tag name. Full-text ({@code q}) and SLA
- * status arrive with TD-33 and TD-44.
+ * {@code "unassigned"} or a user id; {@code tag} is one tag name; {@code q} searches title and description, ranked
+ * by relevance unless a sort is given. SLA status arrives with TD-44.
  */
 public record TicketQuery(
         List<TicketStatus> status,
@@ -23,6 +23,7 @@ public record TicketQuery(
         @Nullable UUID requesterId,
         @Nullable String assignee,
         @Nullable String tag,
+        @Nullable String q,
         List<String> sort,
         int page,
         int size) {
@@ -37,10 +38,21 @@ public record TicketQuery(
 
     public static final Sort DEFAULT_SORT = Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id"));
 
-    /** Parses {@code field,asc|desc} items; an unknown field is a validation problem naming {@code sort}. */
+    public boolean hasText() {
+        return q != null && !q.isBlank();
+    }
+
+    public boolean hasExplicitSort() {
+        return sort != null && !sort.isEmpty();
+    }
+
+    /**
+     * Parses {@code field,asc|desc} items; an unknown field is a validation problem naming {@code sort}.
+     * A text search without an explicit sort is ordered by relevance inside the query instead.
+     */
     public Sort toSort() {
-        if (sort == null || sort.isEmpty()) {
-            return DEFAULT_SORT;
+        if (!hasExplicitSort()) {
+            return hasText() ? Sort.unsorted() : DEFAULT_SORT;
         }
         List<Sort.Order> orders = sort.stream().map(TicketQuery::order).toList();
         return Sort.by(orders).and(Sort.by(Sort.Order.asc("id")));

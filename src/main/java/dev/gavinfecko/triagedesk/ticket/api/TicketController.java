@@ -118,7 +118,7 @@ public class TicketController {
             summary = "List and search tickets",
             description =
                     "Filters combine with AND; comma-separated values within one filter are OR. assignee_id accepts "
-                            + "\"me\", \"unassigned\" or a user id; tag is one tag name. sort is field,direction (created_at, updated_at, priority, status, "
+                            + "\"me\", \"unassigned\" or a user id; tag is one tag name; q searches title and description (ranked by relevance unless sort is given). sort is field,direction (created_at, updated_at, priority, status, "
                             + "key; asc or desc) and may repeat. size is capped at 100. Requesters always see only their own tickets.")
     public PageResponse<TicketSummary> list(
             @RequestParam(required = false) @Nullable List<TicketStatus> status,
@@ -128,6 +128,7 @@ public class TicketController {
             @RequestParam(name = "requester_id", required = false) @Nullable UUID requesterId,
             @RequestParam(name = "assignee_id", required = false) @Nullable String assigneeId,
             @RequestParam(required = false) @Nullable String tag,
+            @RequestParam(required = false) @Nullable @Size(max = 200) String q,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size,
             WebRequest request) {
@@ -141,6 +142,7 @@ public class TicketController {
                 requesterId,
                 assigneeId,
                 tag,
+                q,
                 sort == null ? List.of() : List.of(sort),
                 page,
                 size));
