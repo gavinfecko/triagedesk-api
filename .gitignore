@@ -3,6 +3,7 @@
 
 # Java / Maven
 target/
+.jqwik-database
 *.class
 *.jar
 !.mvn/wrapper/maven-wrapper.jar

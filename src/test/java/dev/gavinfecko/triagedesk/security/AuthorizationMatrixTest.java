@@ -66,6 +66,8 @@ class AuthorizationMatrixTest {
                 new Endpoint(HttpMethod.GET, "/api/v1/categories", null, ANY),
                 new Endpoint(HttpMethod.GET, "/api/v1/queues", null, ANY),
                 new Endpoint(HttpMethod.GET, "/api/v1/tags", null, ANY),
+                new Endpoint(HttpMethod.GET, "/api/v1/sla/calendars", null, STAFF),
+                new Endpoint(HttpMethod.PUT, "/api/v1/sla/calendars/" + UUID.randomUUID(), "{}", ADMIN),
                 new Endpoint(HttpMethod.PUT, "/api/v1/tickets/HD-999999/tags", "[]", STAFF),
                 new Endpoint(HttpMethod.GET, "/actuator/info", null, ADMIN),
                 new Endpoint(HttpMethod.GET, "/actuator/metrics", null, ADMIN),

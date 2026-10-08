@@ -13,6 +13,7 @@ import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
+import dev.gavinfecko.triagedesk.sla.domain.BusinessCalendar;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -71,6 +72,22 @@ class ArchitectureTest {
 
     @ArchTest
     static final ArchRule noJavaUtilLogging = NO_CLASSES_SHOULD_USE_JAVA_UTIL_LOGGING;
+
+    /** The SLA arithmetic is plain Java: no framework, no persistence, so it can be property-tested in isolation. */
+    @ArchTest
+    static final ArchRule businessCalendarIsPureJava = noClasses()
+            .that()
+            .belongToAnyOf(BusinessCalendar.class)
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage(
+                    "org.springframework..",
+                    "jakarta.persistence..",
+                    "org.hibernate..",
+                    "..application..",
+                    "..infra..",
+                    "..api..")
+            .as("BusinessCalendar depends on java.* only");
 
     /** Time comes from the injected {@link Clock}; only common.time may read the wall clock. */
     @ArchTest

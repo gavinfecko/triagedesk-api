@@ -20,6 +20,8 @@ security:
 tags:
 - name: Users
   description: "The caller's own account, and user administration (admins)"
+- name: SLA
+  description: Policies and business-hours calendars (admin)
 - name: Auth
   description: "Register, log in, refresh and log out"
 paths:
@@ -52,6 +54,125 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TicketView"
+        "400":
+          description: Validation failed or the request is malformed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "403":
+          description: The caller's role does not allow this
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: The resource does not exist or is not visible to the caller
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: A business rule refused the request (see the type slug)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: Unexpected error; quote the correlation id
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+  /api/v1/sla/calendars/{id}:
+    get:
+      tags:
+      - SLA
+      summary: One calendar with its hours and holidays
+      operationId: get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarView"
+        "400":
+          description: Validation failed or the request is malformed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "403":
+          description: The caller's role does not allow this
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: The resource does not exist or is not visible to the caller
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: A business rule refused the request (see the type slug)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: Unexpected error; quote the correlation id
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+    put:
+      tags:
+      - SLA
+      summary: "Replace a calendar's name, zone, hours and holidays (admin)"
+      description: "hours maps weekday (MON … SUN) to [open, close] as HH:mm; a missing\
+        \ weekday is closed. The 24x7 calendar cannot be edited."
+      operationId: update
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalendarRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarView"
         "400":
           description: Validation failed or the request is malformed
           content:
@@ -995,7 +1116,7 @@ paths:
       - Users
       summary: Rename a user or change their role (admin); cannot demote the last
         active admin
-      operationId: update
+      operationId: update_1
       parameters:
       - name: id
         in: path
@@ -1060,7 +1181,7 @@ paths:
         requesters
       description: The response carries an ETag; send it back as If-Match when you
         PATCH.
-      operationId: get
+      operationId: get_1
       parameters:
       - name: key
         in: path
@@ -1119,7 +1240,7 @@ paths:
         \ title and description of their own ticket only while it is NEW, and never\
         \ the priority or category. Changing the category does not move the queue\
         \ (see /queue)."
-      operationId: update_1
+      operationId: update_2
       parameters:
       - name: key
         in: path
@@ -1340,6 +1461,57 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
+  /api/v1/sla/calendars:
+    get:
+      tags:
+      - SLA
+      summary: Every calendar
+      operationId: list_3
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CalendarView"
+        "400":
+          description: Validation failed or the request is malformed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "403":
+          description: The caller's role does not allow this
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: The resource does not exist or is not visible to the caller
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: A business rule refused the request (see the type slug)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: Unexpected error; quote the correlation id
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
   /api/v1/queues:
     get:
       tags:
@@ -1522,6 +1694,61 @@ components:
           type: array
           items:
             type: string
+    CalendarRequest:
+      properties:
+        name:
+          type: string
+          maxLength: 60
+          minLength: 2
+        zone:
+          type: string
+          minLength: 1
+        hours:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        holidays:
+          type: array
+          items:
+            $ref: "#/components/schemas/Holiday"
+      required:
+      - holidays
+      - hours
+      - name
+      - zone
+    Holiday:
+      properties:
+        date:
+          type: string
+          format: date
+        name:
+          type: string
+    CalendarView:
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        zone:
+          type: string
+        always_open:
+          type: boolean
+        hours:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        holidays:
+          type: array
+          items:
+            $ref: "#/components/schemas/Holiday"
+        updated_at:
+          type: string
+          format: date-time
     CreateUserRequest:
       properties:
         email:
