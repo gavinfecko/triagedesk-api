@@ -407,8 +407,10 @@ paths:
         \ are OR. assignee_id accepts \"me\", \"unassigned\" or a user id; tag is\
         \ one tag name; q searches title and description (ranked by relevance unless\
         \ sort is given). sort is field,direction (created_at, updated_at, priority,\
-        \ status, key; asc or desc) and may repeat. size is capped at 100. Requesters\
-        \ always see only their own tickets."
+        \ status, key; asc or desc) and may repeat, or sla_due alone (soonest resolution\
+        \ due first). sla_status filters on the resolution clock: on_track, at_risk,\
+        \ breached, met, paused, cancelled. size is capped at 100. Requesters always\
+        \ see only their own tickets."
       operationId: list_1
       parameters:
       - name: status
@@ -465,6 +467,13 @@ paths:
         required: false
         schema:
           type: string
+      - name: sla_status
+        in: query
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
       - name: q
         in: query
         required: false
@@ -2270,6 +2279,15 @@ components:
             $ref: "#/components/schemas/TicketSummary"
         page:
           $ref: "#/components/schemas/PageMeta"
+    Sla:
+      properties:
+        resolution_status:
+          type: string
+        resolution_due_at:
+          type: string
+          format: date-time
+        first_response_status:
+          type: string
     TicketSummary:
       properties:
         id:
@@ -2309,6 +2327,8 @@ components:
         updated_at:
           type: string
           format: date-time
+        sla:
+          $ref: "#/components/schemas/Sla"
     TicketSlaView:
       properties:
         ticket_key:

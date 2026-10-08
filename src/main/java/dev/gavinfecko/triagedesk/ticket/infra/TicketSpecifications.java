@@ -5,10 +5,12 @@ import dev.gavinfecko.triagedesk.ticket.application.TicketQuery;
 import dev.gavinfecko.triagedesk.ticket.domain.Ticket;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
 /** Turns a {@link TicketQuery} into a WHERE clause. The caller decides the visibility scope. */
@@ -17,7 +19,7 @@ public final class TicketSpecifications {
     private TicketSpecifications() {}
 
     public static Specification<Ticket> matching(
-            TicketQuery q, UUID caller, @Nullable UUID onlyRequester, @Nullable UUID tagId) {
+            TicketQuery q, UUID caller, @Nullable UUID onlyRequester, @Nullable UUID tagId, Instant now) {
         return (root, query, cb) -> {
             List<Predicate> and = new ArrayList<>();
             if (onlyRequester != null) {
@@ -49,6 +51,17 @@ public final class TicketSpecifications {
                             cb.function("ticket_rank", Float.class, root.get("searchVector"), cb.literal(q.q()));
                     query.orderBy(cb.desc(rank), cb.desc(root.get("createdAt")), cb.asc(root.get("id")));
                 }
+            }
+            if (!q.slaStatus().isEmpty()) {
+                // ticket_sla_status (V15) reads the SLA module's clocks; the ticket module shares only the database.
+                Expression<String> sla = cb.function(
+                        "ticket_sla_status", String.class, root.get("id"), cb.literal("RESOLUTION"), cb.literal(now));
+                and.add(sla.in(q.slaStatus()));
+            }
+            Sort.Direction byDue = q.slaDueDirection();
+            if (byDue != null && query != null && query.getResultType() != Long.class) {
+                Expression<Instant> due = cb.function("ticket_sla_due", Instant.class, root.get("id"));
+                query.orderBy(byDue == Sort.Direction.ASC ? cb.asc(due) : cb.desc(due), cb.asc(root.get("id")));
             }
             if (q.assignee() != null) {
                 and.add(

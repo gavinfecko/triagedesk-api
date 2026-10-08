@@ -19,4 +19,12 @@ public record TicketSummary(
         Person requester,
         @Nullable Person assignee,
         Instant createdAt,
-        Instant updatedAt) {}
+        Instant updatedAt,
+        @Nullable Sla sla) {
+
+    /** The ticket's current SLA clocks (TD-44); statuses are on_track, at_risk, breached, met, paused, cancelled. */
+    public record Sla(
+            @Nullable String resolutionStatus,
+            @Nullable Instant resolutionDueAt,
+            @Nullable String firstResponseStatus) {}
+}

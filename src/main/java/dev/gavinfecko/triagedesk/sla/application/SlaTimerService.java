@@ -15,6 +15,7 @@ import dev.gavinfecko.triagedesk.ticket.domain.TicketPriorityChanged;
 import dev.gavinfecko.triagedesk.ticket.domain.TicketStatus;
 import dev.gavinfecko.triagedesk.ticket.domain.TicketStatusChanged;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -94,7 +95,9 @@ public class SlaTimerService {
             case PENDING -> openResolution(event.ticketId()).ifPresent(timer -> timer.pause(event.at()));
             case OPEN -> {
                 if (event.from() == TicketStatus.PENDING) {
-                    openResolution(event.ticketId()).ifPresent(timer -> timer.resume(event.at(), calendarOf(timer)));
+                    openResolution(event.ticketId())
+                            .ifPresent(timer -> timer.resume(
+                                    event.at(), calendarOf(timer), parse(timer).budgetFor(timer.kind())));
                 } else if (event.from() == TicketStatus.RESOLVED) {
                     restartResolution(event.ticketId(), event.at());
                 }
@@ -124,11 +127,9 @@ public class SlaTimerService {
                     continue;
                 }
                 Instant before = timer.dueAt();
-                timer.reschedule(
-                        snapshotJson,
-                        calendar.add(
-                                timer.startedAt(),
-                                snapshot.budgetFor(timer.kind()).plusSeconds(timer.pausedTotalSeconds())));
+                Duration budget = snapshot.budgetFor(timer.kind());
+                Instant due = calendar.add(timer.startedAt(), budget.plusSeconds(timer.pausedTotalSeconds()));
+                timer.reschedule(snapshotJson, due, SlaTimer.atRiskPoint(event.at(), due, budget, calendar));
                 audit.record(AuditEvent.of("sla.timer_rescheduled")
                         .actor(event.actorId())
                         .ticket(event.ticketId())
@@ -205,7 +206,7 @@ public class SlaTimerService {
         return new TimerView(
                 timer.id(),
                 timer.kind(),
-                timer.status(snapshot.budgetFor(timer.kind()), calendar, now),
+                timer.status(now),
                 snapshot.priority(),
                 snapshot.calendarId(),
                 (int) snapshot.budgetFor(timer.kind()).toMinutes(),

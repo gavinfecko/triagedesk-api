@@ -63,6 +63,7 @@ public class TicketService {
     private final CommentService comments;
     private final AuditLog audit;
     private final ApplicationEventPublisher events;
+    private final TicketSlaLookup sla;
     private final Clock clock;
 
     public TicketService(
@@ -75,6 +76,7 @@ public class TicketService {
             CommentService comments,
             AuditLog audit,
             ApplicationEventPublisher events,
+            TicketSlaLookup sla,
             Clock clock) {
         this.tickets = tickets;
         this.categories = categories;
@@ -85,6 +87,7 @@ public class TicketService {
         this.comments = comments;
         this.audit = audit;
         this.events = events;
+        this.sla = sla;
         this.clock = clock;
     }
 
@@ -406,7 +409,9 @@ public class TicketService {
             }
         }
         Page<Ticket> found = tickets.findAll(
-                TicketSpecifications.matching(query, actor.id(), actor.isStaff() ? null : actor.id(), tagId), request);
+                TicketSpecifications.matching(
+                        query, actor.id(), actor.isStaff() ? null : actor.id(), tagId, clock.instant()),
+                request);
 
         Set<UUID> personIds = new HashSet<>();
         found.forEach(t -> {
@@ -420,6 +425,8 @@ public class TicketService {
                 categories.findAll().stream().collect(Collectors.toMap(Category::id, Category::name));
         Map<UUID, String> queueNames = queues.findAll().stream().collect(Collectors.toMap(Queue::id, Queue::name));
         Function<UUID, Person> person = id -> id == null ? null : new Person(id, names.get(id));
+        Map<UUID, TicketSummary.Sla> clocks =
+                sla.forTickets(found.map(Ticket::id).toList());
         return PageResponse.of(
                 found,
                 t -> new TicketSummary(
@@ -433,7 +440,8 @@ public class TicketService {
                         person.apply(t.requesterId()),
                         person.apply(t.assigneeId()),
                         t.createdAt(),
-                        t.updatedAt()));
+                        t.updatedAt(),
+                        clocks.get(t.id())));
     }
 
     /**
