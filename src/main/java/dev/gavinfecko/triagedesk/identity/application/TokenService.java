@@ -56,6 +56,7 @@ public class TokenService {
                 .expiresAt(now.plus(properties.accessTokenTtl()))
                 .claim(CurrentUser.ROLE_CLAIM, user.role().name())
                 .claim(CurrentUser.FAMILY_CLAIM, family.toString())
+                .claim(CurrentUser.PASSWORD_CHANGE_CLAIM, user.mustChangePassword())
                 .build();
         String access = signing.encoder()
                 .encode(JwtEncoderParameters.from(
