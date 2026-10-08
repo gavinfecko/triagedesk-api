@@ -252,10 +252,12 @@ class SlaTimerTest {
     void atRiskAndBreachedComeFromTheBusinessTimeLeft() {
         String key = create(Priority.P1_CRITICAL);
         Instant now = clock.instant();
-        jdbc.sql("update sla_timers set started_at = ?, due_at = ? where ticket_id = ? and kind = 'RESOLUTION'")
+        jdbc.sql(
+                        "update sla_timers set started_at = ?, due_at = ?, at_risk_at = ? where ticket_id = ? and kind = 'RESOLUTION'")
                 .params(
                         Timestamp.from(now.minus(Duration.ofMinutes(200))),
                         Timestamp.from(now.plus(Duration.ofMinutes(40))),
+                        Timestamp.from(now.minus(Duration.ofMinutes(20))),
                         ticketId(key))
                 .update();
         JsonNode atRisk = sla(agent, key).get("resolution");

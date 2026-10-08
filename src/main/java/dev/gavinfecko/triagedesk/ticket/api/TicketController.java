@@ -119,7 +119,8 @@ public class TicketController {
             description =
                     "Filters combine with AND; comma-separated values within one filter are OR. assignee_id accepts "
                             + "\"me\", \"unassigned\" or a user id; tag is one tag name; q searches title and description (ranked by relevance unless sort is given). sort is field,direction (created_at, updated_at, priority, status, "
-                            + "key; asc or desc) and may repeat. size is capped at 100. Requesters always see only their own tickets.")
+                            + "key; asc or desc) and may repeat, or sla_due alone (soonest resolution due first). sla_status filters on the "
+                            + "resolution clock: on_track, at_risk, breached, met, paused, cancelled. size is capped at 100. Requesters always see only their own tickets.")
     public PageResponse<TicketSummary> list(
             @RequestParam(required = false) @Nullable List<TicketStatus> status,
             @RequestParam(required = false) @Nullable List<Priority> priority,
@@ -128,6 +129,7 @@ public class TicketController {
             @RequestParam(name = "requester_id", required = false) @Nullable UUID requesterId,
             @RequestParam(name = "assignee_id", required = false) @Nullable String assigneeId,
             @RequestParam(required = false) @Nullable String tag,
+            @RequestParam(name = "sla_status", required = false) @Nullable List<String> slaStatus,
             @RequestParam(required = false) @Nullable @Size(max = 200) String q,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size,
@@ -142,6 +144,7 @@ public class TicketController {
                 requesterId,
                 assigneeId,
                 tag,
+                slaStatus,
                 q,
                 sort == null ? List.of() : List.of(sort),
                 page,

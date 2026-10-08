@@ -47,6 +47,10 @@ public class SlaTimer {
     @Column(name = "due_at", nullable = false)
     private Instant dueAt;
 
+    /** From this instant a quarter of the budget or less is left: the clock reads at_risk (SQL can filter on it). */
+    @Column(name = "at_risk_at", nullable = false)
+    private Instant atRiskAt;
+
     @Column(name = "paused_at")
     private @Nullable Instant pausedAt;
 
@@ -64,13 +68,15 @@ public class SlaTimer {
 
     protected SlaTimer() {}
 
-    private SlaTimer(UUID ticketId, Kind kind, String policySnapshot, Instant startedAt, Instant dueAt) {
+    private SlaTimer(
+            UUID ticketId, Kind kind, String policySnapshot, Instant startedAt, Instant dueAt, Instant atRiskAt) {
         this.id = UUID.randomUUID();
         this.ticketId = ticketId;
         this.kind = kind;
         this.policySnapshot = policySnapshot;
         this.startedAt = startedAt;
         this.dueAt = dueAt;
+        this.atRiskAt = atRiskAt;
     }
 
     public static SlaTimer start(
@@ -80,7 +86,19 @@ public class SlaTimer {
             Instant startedAt,
             BusinessCalendar calendar,
             Duration budget) {
-        return new SlaTimer(ticketId, kind, policySnapshot, startedAt, calendar.add(startedAt, budget));
+        Instant due = calendar.add(startedAt, budget);
+        return new SlaTimer(
+                ticketId, kind, policySnapshot, startedAt, due, atRiskPoint(startedAt, due, budget, calendar));
+    }
+
+    /**
+     * The instant from which only a quarter of the budget is left before {@code due}, measured from {@code ref}:
+     * {@code ref} itself when that point has already passed.
+     */
+    public static Instant atRiskPoint(Instant ref, Instant due, Duration budget, BusinessCalendar calendar) {
+        Duration remaining = ref.isAfter(due) ? Duration.ZERO : calendar.elapsed(ref, due);
+        Duration quarter = budget.dividedBy(4);
+        return remaining.compareTo(quarter) > 0 ? calendar.add(ref, remaining.minus(quarter)) : ref;
     }
 
     /** Still counting (or paused): not met, not breached by the scan, not cancelled. */
@@ -98,8 +116,17 @@ public class SlaTimer {
         }
     }
 
-    /** Ends a pause: the business time it lasted joins the total and pushes the due instant out by as much. */
-    public Duration resume(Instant at, BusinessCalendar calendar) {
+    /**
+     * Ends a pause: the business time it lasted joins the total and pushes the due instant out by as much; the
+     * at-risk point moves with it.
+     */
+    public Duration resume(Instant at, BusinessCalendar calendar, Duration budget) {
+        Duration paused = endPause(at, calendar);
+        atRiskAt = atRiskPoint(at, dueAt, budget, calendar);
+        return paused;
+    }
+
+    private Duration endPause(Instant at, BusinessCalendar calendar) {
         if (pausedAt == null) {
             return Duration.ZERO;
         }
@@ -113,7 +140,7 @@ public class SlaTimer {
     }
 
     public void meet(Instant at, BusinessCalendar calendar) {
-        resume(at, calendar);
+        endPause(at, calendar);
         metAt = at;
     }
 
@@ -127,12 +154,14 @@ public class SlaTimer {
     }
 
     /** A new policy: the due instant is recomputed from the original start, keeping the pauses already taken. */
-    public void reschedule(String newPolicySnapshot, Instant newDueAt) {
+    public void reschedule(String newPolicySnapshot, Instant newDueAt, Instant newAtRiskAt) {
         this.policySnapshot = newPolicySnapshot;
         this.dueAt = newDueAt;
+        this.atRiskAt = newAtRiskAt;
     }
 
-    public SlaStatus status(Duration budget, BusinessCalendar calendar, Instant now) {
+    /** Mirrors the SQL function {@code ticket_sla_status} (V15), which the ticket list filters on. */
+    public SlaStatus status(Instant now) {
         if (cancelledAt != null) {
             return SlaStatus.CANCELLED;
         }
@@ -148,8 +177,7 @@ public class SlaTimer {
         if (now.isAfter(dueAt)) {
             return SlaStatus.BREACHED;
         }
-        Duration remaining = calendar.elapsed(now, dueAt);
-        return remaining.compareTo(budget.dividedBy(4)) <= 0 ? SlaStatus.AT_RISK : SlaStatus.ON_TRACK;
+        return now.isBefore(atRiskAt) ? SlaStatus.ON_TRACK : SlaStatus.AT_RISK;
     }
 
     /** Business time left before the due instant; frozen while paused, zero once the clock has stopped. */
@@ -183,6 +211,10 @@ public class SlaTimer {
 
     public Instant dueAt() {
         return dueAt;
+    }
+
+    public Instant atRiskAt() {
+        return atRiskAt;
     }
 
     public @Nullable Instant pausedAt() {

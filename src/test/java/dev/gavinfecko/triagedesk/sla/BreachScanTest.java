@@ -255,8 +255,8 @@ class BreachScanTest {
                 .query(String.class)
                 .single();
         jdbc.sql("""
-                        insert into sla_timers (id, ticket_id, kind, policy_snapshot, started_at, due_at)
-                        select gen_random_uuid(), t.id, 'FIRST_RESPONSE', cast(? as jsonb), now(),
+                        insert into sla_timers (id, ticket_id, kind, policy_snapshot, started_at, at_risk_at, due_at)
+                        select gen_random_uuid(), t.id, 'FIRST_RESPONSE', cast(? as jsonb), now(), now(),
                                case when t.ticket_key <= 'BS-000100' then now() - interval '1 minute' else now() + interval '1 day' end
                         from tickets t
                         where t.ticket_key like 'BS-%'
