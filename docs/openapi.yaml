@@ -284,7 +284,8 @@ paths:
       summary: List and search tickets
       description: "Filters combine with AND; comma-separated values within one filter\
         \ are OR. assignee_id accepts \"me\", \"unassigned\" or a user id; tag is\
-        \ one tag name. sort is field,direction (created_at, updated_at, priority,\
+        \ one tag name; q searches title and description (ranked by relevance unless\
+        \ sort is given). sort is field,direction (created_at, updated_at, priority,\
         \ status, key; asc or desc) and may repeat. size is capped at 100. Requesters\
         \ always see only their own tickets."
       operationId: list_1
@@ -343,6 +344,13 @@ paths:
         required: false
         schema:
           type: string
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 200
+          minLength: 0
       - name: page
         in: query
         required: false

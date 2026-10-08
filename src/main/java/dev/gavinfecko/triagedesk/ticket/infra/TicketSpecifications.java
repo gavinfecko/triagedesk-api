@@ -3,6 +3,7 @@ package dev.gavinfecko.triagedesk.ticket.infra;
 import dev.gavinfecko.triagedesk.common.errors.InvalidFieldException;
 import dev.gavinfecko.triagedesk.ticket.application.TicketQuery;
 import dev.gavinfecko.triagedesk.ticket.domain.Ticket;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,16 @@ public final class TicketSpecifications {
             }
             if (tagId != null) {
                 and.add(cb.equal(root.join("tagIds"), tagId));
+            }
+            if (q.hasText()) {
+                Expression<Boolean> matches =
+                        cb.function("ticket_matches", Boolean.class, root.get("searchVector"), cb.literal(q.q()));
+                and.add(cb.isTrue(matches));
+                if (!q.hasExplicitSort() && query != null && query.getResultType() != Long.class) {
+                    Expression<Float> rank =
+                            cb.function("ticket_rank", Float.class, root.get("searchVector"), cb.literal(q.q()));
+                    query.orderBy(cb.desc(rank), cb.desc(root.get("createdAt")), cb.asc(root.get("id")));
+                }
             }
             if (q.assignee() != null) {
                 and.add(

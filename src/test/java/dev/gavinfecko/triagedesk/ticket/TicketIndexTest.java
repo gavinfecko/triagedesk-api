@@ -64,6 +64,16 @@ class TicketIndexTest {
     }
 
     @Test
+    void fullTextSearchUsesTheGinIndexThroughTheInlinedFunction() {
+        tenThousandTickets();
+        String count = plan("select count(*) from tickets where ticket_matches(search_vector, 'zebra')");
+        assertThat(count).as(count).contains("tickets_search_idx");
+        String page = plan(
+                "select * from tickets where ticket_matches(search_vector, 'zebra') order by created_at desc limit 50");
+        assertThat(page).as(page).doesNotContain("Seq Scan");
+    }
+
+    @Test
     void aRequestersOwnListUsesTheRequesterIndex() {
         tenThousandTickets();
         String plan = plan("select * from tickets where requester_id = '" + UUID.randomUUID()
