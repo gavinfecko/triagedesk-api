@@ -5,7 +5,9 @@ ALTER TABLE tickets
     ADD COLUMN search_vector tsvector
         GENERATED ALWAYS AS (to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, ''))) STORED;
 
-CREATE INDEX tickets_search_idx ON tickets USING gin (search_vector);
+-- fastupdate off: without it, fresh rows wait in a pending list that the planner prices above a
+-- table scan until a vacuum flushes it. Tickets arrive slowly, so predictable searches win.
+CREATE INDEX tickets_search_idx ON tickets USING gin (search_vector) WITH (fastupdate = off);
 
 CREATE FUNCTION ticket_matches(v tsvector, words text) RETURNS boolean
     LANGUAGE sql STABLE AS $$ SELECT v @@ plainto_tsquery('english', words) $$;

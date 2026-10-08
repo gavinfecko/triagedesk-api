@@ -66,8 +66,11 @@ class TicketIndexTest {
     @Test
     void fullTextSearchUsesTheGinIndexThroughTheInlinedFunction() {
         tenThousandTickets();
-        String plan = plan("select * from tickets where ticket_matches(search_vector, 'zebra') limit 50");
-        assertThat(plan).as(plan).contains("tickets_search_idx");
+        String count = plan("select count(*) from tickets where ticket_matches(search_vector, 'zebra')");
+        assertThat(count).as(count).contains("tickets_search_idx");
+        String page = plan(
+                "select * from tickets where ticket_matches(search_vector, 'zebra') order by created_at desc limit 50");
+        assertThat(page).as(page).doesNotContain("Seq Scan");
     }
 
     @Test
