@@ -127,6 +127,29 @@ public final class BusinessCalendar {
         throw new IllegalStateException("calendar has no opening hours in the next ten years");
     }
 
+    /**
+     * The same local time {@code days} open days later: closed days and holidays are skipped. Used for rules stated in
+     * days ("closes three business days after resolution"); a round-the-clock calendar counts every day.
+     */
+    public Instant plusBusinessDays(Instant from, int days) {
+        if (days < 0) {
+            throw new IllegalArgumentException("days must not be negative: " + days);
+        }
+        java.time.ZonedDateTime local = from.atZone(zone);
+        LocalDate day = local.toLocalDate();
+        int counted = 0;
+        for (int walked = 0; counted < days; walked++) {
+            if (walked >= MAX_DAYS_TO_WALK) {
+                throw new IllegalStateException("calendar has no open days in the next ten years");
+            }
+            day = day.plusDays(1);
+            if (alwaysOpen || window(day) != null) {
+                counted++;
+            }
+        }
+        return day.atTime(local.toLocalTime()).atZone(zone).toInstant();
+    }
+
     public boolean isOpen(Instant at) {
         if (alwaysOpen) {
             return true;

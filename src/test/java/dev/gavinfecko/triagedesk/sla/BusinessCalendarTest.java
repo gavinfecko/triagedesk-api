@@ -91,6 +91,26 @@ class BusinessCalendarTest {
     }
 
     @Test
+    void businessDaysSkipWeekendsAndHolidaysAndKeepTheTimeOfDay() {
+        BusinessCalendar cal = clinic(Set.of(LocalDate.parse("2026-10-12"))); // Columbus Day, a Monday
+        assertThat(cal.plusBusinessDays(ny("2026-10-07", "10:00"), 3)).isEqualTo(ny("2026-10-13", "10:00"));
+        assertThat(cal.plusBusinessDays(ny("2026-10-09", "15:00"), 3))
+                .as("Fri → Tue, Wed, Thu")
+                .isEqualTo(ny("2026-10-15", "15:00"));
+        assertThat(cal.plusBusinessDays(ny("2026-10-10", "12:00"), 1))
+                .as("from a Saturday")
+                .isEqualTo(ny("2026-10-13", "12:00"));
+        assertThat(cal.plusBusinessDays(ny("2026-10-07", "10:00"), 0)).isEqualTo(ny("2026-10-07", "10:00"));
+        assertThat(BusinessCalendar.roundTheClock().plusBusinessDays(Instant.parse("2026-10-10T22:00:00Z"), 3))
+                .isEqualTo(Instant.parse("2026-10-13T22:00:00Z"));
+        assertThatThrownBy(() -> cal.plusBusinessDays(ny("2026-10-07", "10:00"), -1))
+                .isInstanceOf(IllegalArgumentException.class);
+        BusinessCalendar closed = BusinessCalendar.of(NY, Map.of(), Set.of());
+        assertThatThrownBy(() -> closed.plusBusinessDays(ny("2026-10-07", "10:00"), 1))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
     void alwaysOpenCountsWallClockTime() {
         BusinessCalendar cal = BusinessCalendar.roundTheClock();
         Instant from = Instant.parse("2026-10-10T22:00:00Z");
