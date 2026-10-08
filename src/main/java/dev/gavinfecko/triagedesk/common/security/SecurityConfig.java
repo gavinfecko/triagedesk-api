@@ -67,6 +67,8 @@ public class SecurityConfig {
                     auth.requestMatchers(HttpMethod.POST, STAFF_TICKET_ACTIONS).hasAnyRole("AGENT", "ADMIN");
                     auth.requestMatchers(HttpMethod.PUT, "/api/v1/tickets/*/tags")
                             .hasAnyRole("AGENT", "ADMIN");
+                    auth.requestMatchers(HttpMethod.GET, "/api/v1/sla/**").hasAnyRole("AGENT", "ADMIN");
+                    auth.requestMatchers("/api/v1/sla/**").hasRole("ADMIN");
                     auth.requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated();
                     auth.requestMatchers("/api/v1/users", "/api/v1/users/**").hasRole("ADMIN");
                     var docs = auth.requestMatchers(HttpMethod.GET, DOCS_PATHS);

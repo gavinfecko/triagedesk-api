@@ -14,5 +14,8 @@ public final class Reference {
     public static final UUID PRINTER = UUID.fromString("00000000-0000-4000-8000-000000000202");
     public static final UUID SECURITY_INCIDENT = UUID.fromString("00000000-0000-4000-8000-000000000207");
 
+    public static final UUID CLINIC_CALENDAR = UUID.fromString("00000000-0000-4000-8000-000000000301");
+    public static final UUID ALWAYS_OPEN_CALENDAR = UUID.fromString("00000000-0000-4000-8000-000000000302");
+
     private Reference() {}
 }
