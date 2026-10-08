@@ -15,7 +15,8 @@ public final class TicketSpecifications {
 
     private TicketSpecifications() {}
 
-    public static Specification<Ticket> matching(TicketQuery q, UUID caller, @Nullable UUID onlyRequester) {
+    public static Specification<Ticket> matching(
+            TicketQuery q, UUID caller, @Nullable UUID onlyRequester, @Nullable UUID tagId) {
         return (root, query, cb) -> {
             List<Predicate> and = new ArrayList<>();
             if (onlyRequester != null) {
@@ -34,6 +35,9 @@ public final class TicketSpecifications {
             }
             if (q.categoryId() != null) {
                 and.add(cb.equal(root.get("categoryId"), q.categoryId()));
+            }
+            if (tagId != null) {
+                and.add(cb.equal(root.join("tagIds"), tagId));
             }
             if (q.assignee() != null) {
                 and.add(

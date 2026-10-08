@@ -1,13 +1,18 @@
 package dev.gavinfecko.triagedesk.ticket.domain;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 
@@ -65,6 +70,11 @@ public class Ticket {
 
     @Column(name = "closed_at")
     private @Nullable Instant closedAt;
+
+    @ElementCollection
+    @CollectionTable(name = "ticket_tags", joinColumns = @JoinColumn(name = "ticket_id"))
+    @Column(name = "tag_id", nullable = false)
+    private Set<UUID> tagIds = new HashSet<>();
 
     @Column(name = "reopen_count", nullable = false)
     private int reopenCount;
@@ -242,6 +252,21 @@ public class Ticket {
 
     public @Nullable Instant closedAt() {
         return closedAt;
+    }
+
+    public Set<UUID> tagIds() {
+        return Set.copyOf(tagIds);
+    }
+
+    /** Replaces the tag set. Returns true if it changed. */
+    public boolean retag(Set<UUID> newTagIds, Instant now) {
+        if (tagIds.equals(newTagIds)) {
+            return false;
+        }
+        tagIds.clear();
+        tagIds.addAll(newTagIds);
+        updatedAt = now;
+        return true;
     }
 
     public int reopenCount() {

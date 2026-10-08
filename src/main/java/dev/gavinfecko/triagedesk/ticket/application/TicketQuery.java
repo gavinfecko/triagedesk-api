@@ -12,8 +12,8 @@ import org.springframework.data.domain.Sort;
 /**
  * A ticket list request (ARCHITECTURE.md §7): filters combine with AND, values inside one filter
  * with OR, and {@code sort} accepts only the fields listed here. {@code assignee} is {@code "me"},
- * {@code "unassigned"} or a user id. Full-text ({@code q}), tags and SLA status arrive with
- * TD-33, TD-32 and TD-44.
+ * {@code "unassigned"} or a user id; {@code tag} is one tag name. Full-text ({@code q}) and SLA
+ * status arrive with TD-33 and TD-44.
  */
 public record TicketQuery(
         List<TicketStatus> status,
@@ -22,6 +22,7 @@ public record TicketQuery(
         @Nullable UUID categoryId,
         @Nullable UUID requesterId,
         @Nullable String assignee,
+        @Nullable String tag,
         List<String> sort,
         int page,
         int size) {
