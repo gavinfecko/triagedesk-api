@@ -44,7 +44,7 @@ make verify                      # unit + slice + integration tests on real Post
 - [x] Sprint 0: skeleton, Compose + Flyway, CI with four gates and a GHCR image, Problem Details, OpenAPI + Swagger, Actuator + JSON logs, ArchUnit + Spotless + JaCoCo (`v0.1.0`, 2026-09-24; the project board waits on an OAuth scope)
 - [x] Sprint 1: registration, JWT login with rotating refresh tokens, roles, user admin, create and view tickets, demo clinic (`v0.2.0`, 2026-10-02)
 - [x] Sprint 2: replies and notes, status state machine, assignment, optimistic locking, edits, reopen and cancel, audit trail, search and filters (`v0.3.0`, 2026-10-07)
-- [ ] Sprint 3: SLA engine and email (`v0.4.0`)
+- [x] Sprint 3: SLA engine and email (`v0.4.0`)
 - [ ] Sprint 4: dashboard, hardening, Docker, live demo (`v1.0.0`)
 - [ ] Sprints 5–6: Angular client (`triagedesk-web`)
 - [ ] Published (public repo, pinned, portfolio page)
