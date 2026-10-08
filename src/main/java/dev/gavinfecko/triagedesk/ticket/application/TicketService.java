@@ -359,6 +359,26 @@ public class TicketService {
         return Optional.of(after);
     }
 
+    /**
+     * Auto-close: a ticket still RESOLVED is closed by the system (no actor), audited and announced like a person's
+     * close. Returns false when the ticket moved on in the meantime (reopened, already closed).
+     */
+    @Transactional
+    public boolean closeResolved(UUID ticketId) {
+        Ticket ticket = tickets.findById(ticketId).orElseThrow(() -> new NotFoundException("Ticket", ticketId));
+        if (ticket.status() != TicketStatus.RESOLVED) {
+            return false;
+        }
+        Instant now = clock.instant();
+        ticket.transitionTo(TicketStatus.CLOSED, now);
+        audit.record(AuditEvent.of("ticket.status_changed")
+                .ticket(ticket.id())
+                .change("status", TicketStatus.RESOLVED, TicketStatus.CLOSED));
+        events.publishEvent(new TicketStatusChanged(
+                ticket.id(), ticket.key(), TicketStatus.RESOLVED, TicketStatus.CLOSED, null, now));
+        return true;
+    }
+
     private static CurrentUser requireStaff() {
         CurrentUser actor = CurrentUser.get();
         if (!actor.isStaff()) {
