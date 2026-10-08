@@ -40,3 +40,12 @@ INSERT INTO calendar_holidays (calendar_id, holiday, name) VALUES
     ('00000000-0000-4000-8000-000000000301', '2026-12-25', 'Christmas Day'),
     ('00000000-0000-4000-8000-000000000301', '2027-01-01', 'New Year''s Day')
 ON CONFLICT (calendar_id, holiday) DO NOTHING;
+
+-- SLA policies (TD-40), the defaults from ARCHITECTURE.md §4. Business-hour budgets assume the clinic's 10-hour day:
+-- 3 business days = 1800 minutes, 5 business days = 3000 minutes.
+INSERT INTO sla_policies (id, priority, first_response_minutes, resolution_minutes, calendar_id, active) VALUES
+    ('00000000-0000-4000-8000-000000000401', 'P1_CRITICAL',  15,  240, '00000000-0000-4000-8000-000000000302', true),
+    ('00000000-0000-4000-8000-000000000402', 'P2_HIGH',      60,  480, '00000000-0000-4000-8000-000000000301', true),
+    ('00000000-0000-4000-8000-000000000403', 'P3_MEDIUM',   240, 1800, '00000000-0000-4000-8000-000000000301', true),
+    ('00000000-0000-4000-8000-000000000404', 'P4_LOW',      480, 3000, '00000000-0000-4000-8000-000000000301', true)
+ON CONFLICT (id) DO NOTHING;
