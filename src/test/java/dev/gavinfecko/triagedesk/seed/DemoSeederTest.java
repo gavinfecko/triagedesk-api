@@ -2,10 +2,17 @@ package dev.gavinfecko.triagedesk.seed;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.gavinfecko.triagedesk.sla.application.CalendarService;
+import dev.gavinfecko.triagedesk.sla.application.SlaPolicyService;
+import dev.gavinfecko.triagedesk.sla.application.SlaTimerService;
+import dev.gavinfecko.triagedesk.sla.application.TicketSlaView.TimerView;
+import dev.gavinfecko.triagedesk.sla.domain.SlaStatus;
 import dev.gavinfecko.triagedesk.support.ApiTest;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -30,11 +37,20 @@ class DemoSeederTest {
     Clock clock;
 
     @Autowired
+    SlaTimerService timers;
+
+    @Autowired
+    SlaPolicyService policies;
+
+    @Autowired
+    CalendarService calendars;
+
+    @Autowired
     MockMvcTester mvc;
 
     @Test
     void seedsTheDemoClinicOnceAndNeverDuplicates() {
-        DemoSeeder seeder = new DemoSeeder(jdbc, passwords, transactions, clock);
+        DemoSeeder seeder = new DemoSeeder(jdbc, passwords, transactions, clock, timers, policies, calendars);
         DemoSeeder.Result first = seeder.seed();
         DemoSeeder.Result second = seeder.seed();
 
@@ -82,8 +98,31 @@ class DemoSeederTest {
     }
 
     @Test
+    void everyDemoTicketHasClocksAndSomeAreAtRiskOrBreachedOnDayOne() {
+        new DemoSeeder(jdbc, passwords, transactions, clock, timers, policies, calendars).seed();
+        List<String> emails =
+                DemoSeeder.everyone().stream().map(DemoData.Person::email).toList();
+        List<UUID> tickets =
+                jdbc.sql("""
+                        select t.id from tickets t join users u on u.id = t.requester_id where u.email in (:emails)""").param("emails", emails).query(UUID.class).list();
+        assertThat(tickets).hasSize(60);
+        Map<SlaStatus, Long> resolutionClocks = tickets.stream()
+                .flatMap(id -> timers.timersOf(id).stream())
+                .filter(t -> t.kind().name().equals("RESOLUTION"))
+                .collect(Collectors.groupingBy(TimerView::status, Collectors.counting()));
+        assertThat(resolutionClocks.values().stream().mapToLong(Long::longValue).sum())
+                .isEqualTo(60);
+        assertThat(resolutionClocks)
+                .containsKeys(
+                        SlaStatus.AT_RISK, SlaStatus.BREACHED, SlaStatus.MET, SlaStatus.PAUSED, SlaStatus.CANCELLED);
+        assertThat(resolutionClocks.get(SlaStatus.AT_RISK)).isEqualTo(3);
+        assertThat(resolutionClocks.get(SlaStatus.CANCELLED)).isEqualTo(3);
+        assertThat(resolutionClocks.get(SlaStatus.PAUSED)).isEqualTo(8);
+    }
+
+    @Test
     void theDemoAdminCanLogInWithTheDocumentedPassword() {
-        new DemoSeeder(jdbc, passwords, transactions, clock).seed();
+        new DemoSeeder(jdbc, passwords, transactions, clock, timers, policies, calendars).seed();
         jdbc.sql("update users set active = true where email = 'admin@clinic.test'")
                 .update();
         assertThat(mvc.post()

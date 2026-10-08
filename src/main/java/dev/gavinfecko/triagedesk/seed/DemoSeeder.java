@@ -2,6 +2,15 @@ package dev.gavinfecko.triagedesk.seed;
 
 import dev.gavinfecko.triagedesk.seed.DemoData.Person;
 import dev.gavinfecko.triagedesk.seed.DemoData.Problem;
+import dev.gavinfecko.triagedesk.sla.application.CalendarService;
+import dev.gavinfecko.triagedesk.sla.application.SlaPolicyService;
+import dev.gavinfecko.triagedesk.sla.application.SlaTimerService;
+import dev.gavinfecko.triagedesk.sla.domain.BusinessCalendar;
+import dev.gavinfecko.triagedesk.ticket.domain.Priority;
+import dev.gavinfecko.triagedesk.ticket.domain.TicketCreated;
+import dev.gavinfecko.triagedesk.ticket.domain.TicketFirstResponded;
+import dev.gavinfecko.triagedesk.ticket.domain.TicketStatus;
+import dev.gavinfecko.triagedesk.ticket.domain.TicketStatusChanged;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Duration;
@@ -40,12 +49,25 @@ public class DemoSeeder implements ApplicationRunner {
     private final PasswordEncoder passwords;
     private final TransactionTemplate transactions;
     private final Clock clock;
+    private final SlaTimerService timers;
+    private final SlaPolicyService policies;
+    private final CalendarService calendars;
 
-    public DemoSeeder(JdbcClient jdbc, PasswordEncoder passwords, TransactionTemplate transactions, Clock clock) {
+    public DemoSeeder(
+            JdbcClient jdbc,
+            PasswordEncoder passwords,
+            TransactionTemplate transactions,
+            Clock clock,
+            SlaTimerService timers,
+            SlaPolicyService policies,
+            CalendarService calendars) {
         this.jdbc = jdbc;
         this.passwords = passwords;
         this.transactions = transactions;
         this.clock = clock;
+        this.timers = timers;
+        this.policies = policies;
+        this.calendars = calendars;
     }
 
     @Override
@@ -107,6 +129,10 @@ public class DemoSeeder implements ApplicationRunner {
         String status = STATUS_PLAN[i];
         // Spread over the last ~3 weeks; lower i is older, and older tickets are the finished ones.
         Instant created = now.minus(Duration.ofHours(8L * (TICKETS - i) + (i % 5)));
+        if (status.equals("OPEN") && i % 5 == 0) {
+            // Three open tickets sit inside the at-risk window, so the SLA views have something to show on day one.
+            created = atRiskStart(Priority.valueOf(problem.priority()), now);
+        }
         boolean worked = !status.equals("NEW") && !status.equals("CANCELLED");
         @Nullable UUID assignee = worked ? DemoData.AGENTS.get(i % 2).id() : null;
         @Nullable Instant firstResponse = worked ? created.plus(Duration.ofMinutes(20 + (i % 7) * 10L)) : null;
@@ -142,8 +168,73 @@ public class DemoSeeder implements ApplicationRunner {
                 .update();
         if (inserted == 1) {
             history(id, status, requester.id(), assignee, created, firstResponse, resolved, closed);
+            clocks(
+                    id,
+                    status,
+                    Priority.valueOf(problem.priority()),
+                    requester.id(),
+                    assignee,
+                    created,
+                    firstResponse,
+                    resolved);
         }
         return inserted;
+    }
+
+    /** The clocks a ticket in this status would have, driven through the same listeners as real tickets. */
+    private void clocks(
+            UUID id,
+            String status,
+            Priority priority,
+            UUID requester,
+            @Nullable UUID assignee,
+            Instant created,
+            @Nullable Instant firstResponse,
+            @Nullable Instant resolved) {
+        String key = jdbc.sql("select ticket_key from tickets where id = ?")
+                .param(id)
+                .query(String.class)
+                .single();
+        timers.onTicketCreated(new TicketCreated(id, key, priority, requester, created));
+        if (status.equals("CANCELLED")) {
+            timers.onStatusChanged(new TicketStatusChanged(
+                    id, key, TicketStatus.NEW, TicketStatus.CANCELLED, requester, created.plus(Duration.ofHours(1))));
+            return;
+        }
+        if (firstResponse == null || assignee == null) {
+            return;
+        }
+        timers.onFirstResponse(new TicketFirstResponded(id, key, assignee, firstResponse));
+        if (status.equals("PENDING")) {
+            timers.onStatusChanged(new TicketStatusChanged(
+                    id,
+                    key,
+                    TicketStatus.OPEN,
+                    TicketStatus.PENDING,
+                    assignee,
+                    firstResponse.plus(Duration.ofMinutes(30))));
+        }
+        if (resolved != null) {
+            timers.onStatusChanged(
+                    new TicketStatusChanged(id, key, TicketStatus.OPEN, TicketStatus.RESOLVED, assignee, resolved));
+        }
+    }
+
+    /** A creation instant from which about 80 % of the priority's resolution budget has already run. */
+    private Instant atRiskStart(Priority priority, Instant now) {
+        return policies.activeFor(priority)
+                .map(policy -> {
+                    BusinessCalendar calendar = calendars.calendar(policy.calendarId());
+                    Duration target = Duration.ofMinutes(policy.resolutionMinutes())
+                            .multipliedBy(4)
+                            .dividedBy(5);
+                    Instant start = now;
+                    while (calendar.elapsed(start, now).compareTo(target) < 0) {
+                        start = start.minus(Duration.ofMinutes(10));
+                    }
+                    return start;
+                })
+                .orElse(now.minus(Duration.ofHours(2)));
     }
 
     /** The audit rows a ticket in this status would have accumulated, in order (TD-31). */

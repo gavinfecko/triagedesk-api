@@ -109,6 +109,8 @@ class AuditTrailTest {
                         "ticket.status_changed",
                         "ticket.comment_added",
                         "ticket.priority_changed",
+                        "sla.timer_rescheduled",
+                        "sla.timer_rescheduled",
                         "ticket.edited");
         JsonNode assigned = trail.get(1);
         assertThat(assigned.get("actor").get("display_name").asString()).startsWith("Agent");
@@ -118,8 +120,10 @@ class AuditTrailTest {
                 .isEqualTo(requester.userId().toString());
         assertThat(trail.get(7).get("before").asString()).isEqualTo("P3_MEDIUM");
         assertThat(trail.get(7).get("after").asString()).isEqualTo("P4_LOW");
-        assertThat(trail.get(8).get("field").asString()).isEqualTo("title");
-        assertThat(trail.get(8).get("after").asString()).isEqualTo("Workstation slow to start after the update");
+        assertThat(trail.get(8).get("field").asString()).isEqualTo("first_response_due_at");
+        assertThat(trail.get(9).get("field").asString()).isEqualTo("resolution_due_at");
+        assertThat(trail.get(10).get("field").asString()).isEqualTo("title");
+        assertThat(trail.get(10).get("after").asString()).isEqualTo("Workstation slow to start after the update");
     }
 
     @Test
