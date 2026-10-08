@@ -8,7 +8,7 @@ export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE ?= /var/run/docker.sock
 -include .env
 export
 
-.PHONY: help up down nuke run test verify fmt seed
+.PHONY: help up down nuke run test verify fmt seed smoke
 help:       ## show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
 up:         ## start PostgreSQL + Mailpit (starts Colima first if needed; creates .env from .env.example)
@@ -31,3 +31,6 @@ fmt:        ## format the code (Spotless, TD-8)
 	./mvnw spotless:apply
 seed:       ## load the demo clinic (9 users, 60 tickets) into the dev database and exit; `make run` also seeds
 	./mvnw -q spring-boot:run -Dspring-boot.run.profiles=dev,seed
+smoke:      ## build the image and run the demo smoke test against a fresh, throwaway stack (TD-114)
+	docker build -t triagedesk-api:smoke .
+	scripts/demo-smoke.sh --compose

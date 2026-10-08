@@ -1,0 +1,21 @@
+# The demo smoke test stack (TD-114): compose.yaml plus the API image, isolated from a running dev stack.
+# Used by scripts/demo-smoke.sh --compose, locally (`make smoke`) and in CI before an image is published.
+services:
+  postgres:
+    ports: !reset []          # no host port: the API reaches it on the compose network
+    volumes: !reset []        # always a fresh, throwaway database
+  mailpit:
+    ports: !override ["18025:8025"]
+  api:
+    image: ${SMOKE_IMAGE:-triagedesk-api:smoke}
+    depends_on:
+      postgres: { condition: service_healthy }
+      mailpit: { condition: service_healthy }
+    environment:
+      SPRING_PROFILES_ACTIVE: dev           # dev seeds the demo clinic on startup
+      SPRING_DOCKER_COMPOSE_ENABLED: "false"
+      DB_URL: jdbc:postgresql://postgres:5432/triagedesk
+      SPRING_MAIL_HOST: mailpit
+      JWT_SECRET: smoke-test-only-signing-key-smoke-test-only-0000
+    ports:
+      - "18080:8080"
