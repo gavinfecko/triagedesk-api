@@ -115,7 +115,8 @@ class DemoSeederTest {
         assertThat(resolutionClocks)
                 .containsKeys(
                         SlaStatus.AT_RISK, SlaStatus.BREACHED, SlaStatus.MET, SlaStatus.PAUSED, SlaStatus.CANCELLED);
-        assertThat(resolutionClocks.get(SlaStatus.AT_RISK)).isEqualTo(3);
+        // The three planted tickets, plus any older open ticket whose budget the time of day has eaten into.
+        assertThat(resolutionClocks.get(SlaStatus.AT_RISK)).isGreaterThanOrEqualTo(3);
         assertThat(resolutionClocks.get(SlaStatus.CANCELLED)).isEqualTo(3);
         assertThat(resolutionClocks.get(SlaStatus.PAUSED)).isEqualTo(8);
     }
